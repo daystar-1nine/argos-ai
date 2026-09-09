@@ -1,0 +1,14 @@
+{
+  "name": "ARGOS AI — Protect. Detect. Verify. Respond.",
+  "short_name": "ARGOS AI",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#F4CD3F",
+  "background_color": "#F8E8E8",
+  "display": "standalone"
+}

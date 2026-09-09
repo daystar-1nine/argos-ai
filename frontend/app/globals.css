@@ -1,43 +1,155 @@
 @import "tailwindcss";
 
 :root {
-  --electric-yellow: #F4CD3F;
-  --warm-cream: #EFD99C;
+  --primary-yellow: #F4CD3F;
+  --cream: #EFD99C;
   --deep-mauve: #844469;
-  --near-black: #111111;
-  --soft-canvas: #F7F3E8;
-  --alert-red: #D95D5D;
-  --success-green: #8BCF9B;
+  --baby-pink: #F6C6D8;
+  --dark: #111111;
+  --soft-background: #F8E8E8;
+  --danger: #D95D5D;
+  --success: #8BCF9B;
 }
 
 @theme {
-  --color-electric-yellow: #F4CD3F;
-  --color-warm-cream: #EFD99C;
+  --color-primary-yellow: #F4CD3F;
+  --color-cream: #EFD99C;
   --color-deep-mauve: #844469;
-  --color-near-black: #111111;
-  --color-soft-canvas: #F7F3E8;
-  --color-alert-red: #D95D5D;
-  --color-success-green: #8BCF9B;
-  
+  --color-baby-pink: #F6C6D8;
+  --color-dark: #111111;
+  --color-soft-background: #F8E8E8;
+  --color-danger: #D95D5D;
+  --color-success: #8BCF9B;
+
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --font-pixel: "Silkscreen", "VT323", monospace;
+  --font-pixel: "Silkscreen", monospace;
 }
 
+/* Global Body Baseline */
 body {
-  background-color: #F7F3E8;
+  background-color: #F8E8E8;
   color: #111111;
   font-family: var(--font-display);
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
-/* Neo-Brutalist Box Shadows */
-.brutal-shadow {
+/* Reusable Layout Container System */
+.container-argos {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .container-argos {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.section-argos {
+  width: 100%;
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
+  border-bottom: 3px solid #111111;
+  min-width: 0;
+}
+
+/* Zero-Overlap Card System */
+.brutal-card {
+  border: 3px solid #111111;
   box-shadow: 4px 4px 0px 0px #111111;
+  background-color: #EFD99C;
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.brutal-card-pink {
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0px 0px #111111;
+  background-color: #F6C6D8;
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.brutal-card-cream {
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0px 0px #111111;
+  background-color: #EFD99C;
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.brutal-card-mauve {
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0px 0px #111111;
+  background-color: #844469;
+  color: #EFD99C;
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.brutal-card-dark {
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0px 0px #844469;
+  background-color: #111111;
+  color: #EFD99C;
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Neo-Brutalist Buttons */
+.brutal-btn {
+  border: 2.5px solid #111111;
+  box-shadow: 3px 3px 0px 0px #111111;
+  transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.brutal-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px #111111;
+}
+
+.brutal-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px #111111;
+}
+
+/* Hard Offset Shadows */
 .brutal-shadow-sm {
   box-shadow: 2px 2px 0px 0px #111111;
+}
+
+.brutal-shadow {
+  box-shadow: 4px 4px 0px 0px #111111;
 }
 
 .brutal-shadow-lg {
@@ -46,39 +158,6 @@ body {
 
 .brutal-shadow-xl {
   box-shadow: 8px 8px 0px 0px #111111;
-}
-
-.brutal-shadow-mauve {
-  box-shadow: 4px 4px 0px 0px #844469;
-}
-
-.brutal-shadow-yellow {
-  box-shadow: 4px 4px 0px 0px #F4CD3F;
-}
-
-.brutal-btn {
-  border: 3px solid #111111;
-  box-shadow: 4px 4px 0px 0px #111111;
-  transition: all 0.12s ease-in-out;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.brutal-btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px 0px #111111;
-}
-
-.brutal-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0px 0px #111111;
-}
-
-.brutal-card {
-  border: 3px solid #111111;
-  box-shadow: 5px 5px 0px 0px #111111;
-  background-color: #EFD99C;
 }
 
 /* CRT Scanlines Overlay */
@@ -91,7 +170,8 @@ body {
   display: block;
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
   z-index: 10;
   background-size: 100% 3px, 4px 100%;
   pointer-events: none;

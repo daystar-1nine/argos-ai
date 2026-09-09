@@ -1,20 +1,18 @@
 'use client';
 
 import React from 'react';
-import Header from '@/components/Header';
-import LiveStatusStrip from '@/components/LiveStatusStrip';
+import Navbar from '@/components/navigation/Navbar';
 import PublicVerify from '@/components/PublicVerify';
-import Footer from '@/components/Footer';
+import Footer from '@/components/navigation/Footer';
 
 export default function VerifyPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-[#F7F3E8]">
-      <Header />
-      <LiveStatusStrip />
+    <div className="min-h-screen flex flex-col bg-[#F8E8E8] text-[#111111]">
+      <Navbar />
       <div className="flex-1">
         <PublicVerify />
       </div>
       <Footer />
-    </main>
+    </div>
   );
 }

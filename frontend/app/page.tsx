@@ -1,72 +1,77 @@
 'use client';
 
 import React from 'react';
-import Header from '@/components/Header';
+import Navbar from '@/components/navigation/Navbar';
 import LiveStatusStrip from '@/components/LiveStatusStrip';
-import HeroCRT from '@/components/HeroCRT';
-import BentoGrid from '@/components/BentoGrid';
-import AuthenticityGate from '@/components/AuthenticityGate';
-import MediaDNAVisualizer from '@/components/MediaDNAVisualizer';
-import AttackLab from '@/components/AttackLab';
-import DeepfakeForensics from '@/components/DeepfakeForensics';
-import GlobalWatch from '@/components/GlobalWatch';
-import OwnerAlerts from '@/components/OwnerAlerts';
-import IncidentResponse from '@/components/IncidentResponse';
-import ForensicReportSection from '@/components/ForensicReportModal';
-import ProtectionWorkflow from '@/components/ProtectionWorkflow';
-import Footer from '@/components/Footer';
+import LandingHero from '@/components/landing/LandingHero';
+import LandingProblem from '@/components/landing/LandingProblem';
+import LandingHowItWorks from '@/components/landing/LandingHowItWorks';
+import LandingProtection from '@/components/landing/LandingProtection';
+import LandingMediaDNA from '@/components/landing/LandingMediaDNA';
+import LandingDetection from '@/components/landing/LandingDetection';
+import LandingGlobalWatch from '@/components/landing/LandingGlobalWatch';
+import LandingAttackLab from '@/components/landing/LandingAttackLab';
+import LandingAlerts from '@/components/landing/LandingAlerts';
+import LandingEvidence from '@/components/landing/LandingEvidence';
+import LandingTakedown from '@/components/landing/LandingTakedown';
+import LandingVerification from '@/components/landing/LandingVerification';
+import LandingTechStack from '@/components/landing/LandingTechStack';
+import LandingCTA from '@/components/landing/LandingCTA';
+import Footer from '@/components/navigation/Footer';
 
-export default function Home() {
-  const scrollToProtect = () => {
-    const el = document.getElementById('protect-workflow');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
+export default function LandingPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-[#F7F3E8]">
+    <div className="min-h-screen flex flex-col bg-[#F8E8E8] text-[#111111]">
       {/* 1. Global Navigation Bar */}
-      <Header />
+      <Navbar />
 
-      {/* 2. Live System Status Strip */}
+      {/* Network Status Terminal Bar */}
       <LiveStatusStrip />
 
-      {/* 3. Grand Hero with Retro CRT Monitor */}
-      <HeroCRT onProtectClick={scrollToProtect} />
+      {/* 2. Hero with Y2K CRT Comparative Monitor */}
+      <LandingHero />
 
-      {/* 4. The 8-Pillar Bento Lifecycle Grid */}
-      <BentoGrid />
+      {/* 3. The Problem */}
+      <LandingProblem />
 
-      {/* 5. Authenticity Gate (Before we protect it, we verify it) */}
-      <AuthenticityGate onProceedToProtect={scrollToProtect} />
+      {/* 4. How Argos Works (8-Step Lifecycle) */}
+      <LandingHowItWorks />
 
-      {/* 6. Interactive Media DNA Particle Visualizer */}
-      <MediaDNAVisualizer />
+      {/* 5. Protection (Authenticity Gate & Watermark) */}
+      <LandingProtection />
 
-      {/* 7. Attack Lab (Interactive WOW Feature) */}
-      <AttackLab />
+      {/* 6. Media DNA (Particle Double-Helix Visualizer) */}
+      <LandingMediaDNA />
 
-      {/* 8. Deepfake Forensics & Explainable AI */}
-      <DeepfakeForensics />
+      {/* 7. Deepfake Detection & Explainable AI */}
+      <LandingDetection />
 
-      {/* 9. Argos Global Watch (Supported Indexed Sources) */}
-      <GlobalWatch />
+      {/* 8. Global Monitoring (Argos Global Watch) */}
+      <LandingGlobalWatch />
 
-      {/* 10. Owner Alert Center */}
-      <OwnerAlerts />
+      {/* 9. Attack Lab (Stress Test Simulation) */}
+      <LandingAttackLab />
 
-      {/* 11. Incident Response & Takedown Center */}
-      <IncidentResponse />
+      {/* 10. Alerts Dispatch Center */}
+      <LandingAlerts />
 
-      {/* 12. Forensic Report PDF Dossier Section */}
-      <ForensicReportSection />
+      {/* 11. Forensic Evidence & Dossier */}
+      <LandingEvidence />
 
-      {/* 13. 5-Stage Protection Workflow */}
-      <ProtectionWorkflow />
+      {/* 12. Takedown & Incident Response */}
+      <LandingTakedown />
 
-      {/* 14. Footer with Legal Disclaimer */}
+      {/* 13. Public Verification */}
+      <LandingVerification />
+
+      {/* 14. Technology & Architecture */}
+      <LandingTechStack />
+
+      {/* 15. Final Call to Action */}
+      <LandingCTA />
+
+      {/* 16. Footer with Legal Disclaimer */}
       <Footer />
-    </main>
+    </div>
   );
 }
