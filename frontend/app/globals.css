@@ -198,8 +198,20 @@ body {
   animation: blink 0.6s infinite ease-in-out;
 }
 
+/* Scanline Laser Sweep */
+@keyframes scanlineLaser {
+  0% { transform: translateY(0px); opacity: 0.2; }
+  50% { opacity: 0.9; }
+  100% { transform: translateY(96px); opacity: 0.2; }
+}
+
+.animate-scanline-laser {
+  animation: scanlineLaser 1.2s infinite ease-in-out alternate;
+}
+
 /* Selection */
 ::selection {
   background-color: #F4CD3F;
   color: #111111;
 }
+

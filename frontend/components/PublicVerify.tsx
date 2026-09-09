@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { DEMO_ASSET, DEMO_DNA, DEMO_PROVENANCE } from '@/lib/data';
+import ArgosLoader from '@/components/ui/ArgosLoader';
 
 export default function PublicVerify() {
   const [queryId, setQueryId] = useState('ARG-2026-8A92F1');
@@ -28,14 +29,23 @@ export default function PublicVerify() {
     setTimeout(() => {
       setIsSearching(false);
       setHasQueried(true);
-    }, 600);
+    }, 1400);
   };
 
   const isDerivative = testMode === 'derivative';
 
   return (
-    <div className="w-full py-16 px-4 lg:px-8 bg-[#F7F3E8]">
+    <div className="w-full py-16 px-4 lg:px-8 bg-[#F7F3E8] relative">
+      {isSearching && (
+        <ArgosLoader 
+          variant="analysis" 
+          targetName={`Asset ID: ${queryId}`} 
+          duration={1400} 
+          onClose={() => setIsSearching(false)} 
+        />
+      )}
       <div className="max-w-4xl mx-auto">
+
         
         {/* Header */}
         <div className="text-center mb-10">

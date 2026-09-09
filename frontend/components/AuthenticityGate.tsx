@@ -16,8 +16,10 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { AuthenticityVerdict } from '@/lib/types';
+import ArgosLoader from '@/components/ui/ArgosLoader';
 
 export default function AuthenticityGate({ onProceedToProtect }: { onProceedToProtect?: () => void }) {
+
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<'authentic' | 'synthetic' | 'inconclusive'>('authentic');
   const [fileName, setFileName] = useState('camera_raw_keynote_master_4k.mp4');
@@ -70,8 +72,17 @@ export default function AuthenticityGate({ onProceedToProtect }: { onProceedToPr
   };
 
   return (
-    <section id="authenticity-gate" className="w-full py-20 px-4 lg:px-8 bg-[#EFD99C] border-b-[3px] border-[#111111]">
+    <section id="authenticity-gate" className="w-full py-20 px-4 lg:px-8 bg-[#EFD99C] border-b-[3px] border-[#111111] relative">
+      {analyzing && (
+        <ArgosLoader 
+          variant="analysis" 
+          targetName={fileName} 
+          duration={1800} 
+          onClose={() => setAnalyzing(false)} 
+        />
+      )}
       <div className="max-w-7xl mx-auto">
+
         
         {/* Header */}
         <div className="mb-10 text-center max-w-3xl mx-auto">

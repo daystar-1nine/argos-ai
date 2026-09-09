@@ -6,7 +6,8 @@ import Sidebar from '@/components/navigation/Sidebar';
 import DashboardHeader from '@/components/navigation/DashboardHeader';
 import PageHeader from '@/components/ui/PageHeader';
 import BrutalistCard from '@/components/ui/BrutalistCard';
-import { Key, Copy, Shield, Bell, Trash2, Check, ExternalLink } from 'lucide-react';
+import { Key, Copy, Shield, Bell, Trash2, Check, ExternalLink, Zap, Eye, Activity } from 'lucide-react';
+import ArgosLoader from '@/components/ui/ArgosLoader';
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('argos_live_sk_99a81f0927c3e100984');
@@ -14,6 +15,9 @@ export default function SettingsPage() {
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState('https://api.creator-network.io/webhooks/argos');
   const [purged, setPurged] = useState(false);
+  const [showBootLoader, setShowBootLoader] = useState(false);
+  const [showAnalysisDemo, setShowAnalysisDemo] = useState(false);
+
 
   const copyApiKey = () => {
     navigator.clipboard.writeText(apiKey);
@@ -166,6 +170,38 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Forensic Boot & Engine Experience Card */}
+              <div className="bg-[#EFD99C] border-[3px] border-[#111111] brutal-shadow p-5 font-mono text-xs space-y-3">
+                <div className="font-black uppercase text-[#111111] flex items-center justify-between pb-2 border-b border-[#111111]/20">
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-[#844469]" />
+                    FORENSIC ENGINE EXPERIENCE
+                  </span>
+                  <span className="text-[9px] bg-[#111111] text-[#F4CD3F] px-1.5 py-0.5 font-bold">
+                    INTERACTIVE
+                  </span>
+                </div>
+                <p className="text-[#111111]/80 text-[11px] leading-relaxed">
+                  Trigger the cinematic Y2K boot sequence or launch the deep multi-model forensic analysis visualizer directly.
+                </p>
+                <div className="flex flex-col gap-2 pt-1">
+                  <button
+                    onClick={() => setShowBootLoader(true)}
+                    className="w-full py-2.5 bg-[#F4CD3F] hover:bg-white text-[#111111] border-[2px] border-[#111111] brutal-btn font-bold uppercase text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    REPLAY CINEMATIC SYSTEM BOOT (2.2s)
+                  </button>
+                  <button
+                    onClick={() => setShowAnalysisDemo(true)}
+                    className="w-full py-2.5 bg-[#844469] hover:bg-[#111111] text-[#EFD99C] border-[2px] border-[#111111] brutal-btn font-bold uppercase text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    LAUNCH FORENSIC SCANNER DEMO
+                  </button>
+                </div>
+              </div>
+
               {/* Data Deletion Controls (Requirement 27) */}
               <div className="bg-[#D95D5D]/15 border-[3px] border-[#D95D5D] p-5 brutal-shadow font-mono text-xs space-y-3">
                 <div className="font-black uppercase text-[#D95D5D] flex items-center gap-2">
@@ -189,6 +225,26 @@ export default function SettingsPage() {
             </div>
 
           </div>
+
+          {/* Conditional Loaders */}
+          {showBootLoader && (
+            <ArgosLoader 
+              variant="initial" 
+              forceShow={true} 
+              onComplete={() => setShowBootLoader(false)} 
+            />
+          )}
+
+          {showAnalysisDemo && (
+            <ArgosLoader 
+              variant="analysis" 
+              targetName="sony_fx6_camera_sensor_stream.raw" 
+              duration={2500} 
+              onClose={() => setShowAnalysisDemo(false)} 
+              onComplete={() => setShowAnalysisDemo(false)} 
+            />
+          )}
+
 
         </div>
       </div>

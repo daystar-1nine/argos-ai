@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { AttackType } from '@/lib/types';
 import { ATTACK_RESPONSES, DEMO_ASSET } from '@/lib/data';
+import ArgosLoader from '@/components/ui/ArgosLoader';
+
 
 export default function AttackLab() {
   const [selectedAttack, setSelectedAttack] = useState<AttackType>('face_swap');
@@ -30,12 +32,21 @@ export default function AttackLab() {
     setIsSimulating(true);
     setTimeout(() => {
       setIsSimulating(false);
-    }, 600);
+    }, 1500);
   };
 
   return (
-    <section id="attack-lab" className="w-full py-20 px-4 lg:px-8 bg-[#EFD99C] border-b-[3px] border-[#111111]">
+    <section id="attack-lab" className="w-full py-20 px-4 lg:px-8 bg-[#EFD99C] border-b-[3px] border-[#111111] relative">
+      {isSimulating && (
+        <ArgosLoader 
+          variant="analysis" 
+          targetName={`Adversarial Stress Test: ${selectedAttack.replace('_', ' ').toUpperCase()}`} 
+          duration={1500} 
+          onClose={() => setIsSimulating(false)} 
+        />
+      )}
       <div className="max-w-7xl mx-auto">
+
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
