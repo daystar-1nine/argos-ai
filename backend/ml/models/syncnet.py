@@ -138,14 +138,51 @@ class SyncNet(nn.Module):
 
     def compute_sync_score(self, lip_seq: torch.Tensor, audio_mel: torch.Tensor) -> torch.Tensor:
         """
-        Computes cosine similarity between visual and audio embeddings.
-        Returns tensor of scores calibrated to [0.0, 1.0].
+        Computes calibrated cross-modal audio-visual synchronization score.
+        Combines deep neural embeddings with temporal viseme-phoneme energy alignment.
         """
         v_emb, a_emb = self.forward(lip_seq, audio_mel)
-        # Cosine similarity in [-1.0, 1.0]
         cos_sim = torch.sum(v_emb * a_emb, dim=-1)
-        # Calibrate to [0.0, 1.0]
-        score = torch.clamp((cos_sim + 1.0) / 2.0, 0.0, 1.0)
+        base_score = torch.clamp((cos_sim + 1.0) / 2.0, 0.0, 1.0)
+
+        # Temporal viseme-phoneme alignment
+        try:
+            # audio_mel: (B, 1, 80, 80) -> temporal energy (B, 80) -> pooled to (B, 20)
+            a_energy = audio_mel.squeeze(1).mean(dim=1)  # (B, 80)
+            if a_energy.size(-1) >= 20:
+                a_energy_down = F.adaptive_avg_pool1d(a_energy.unsqueeze(1), 20).squeeze(1)  # (B, 20)
+            else:
+                a_energy_down = a_energy
+
+            # lip_seq: (B, 1, 20, 96, 96) or (B, 20, 1, 96, 96)
+            # Ensure shape is (B, 20, 96, 96)
+            if lip_seq.dim() == 5:
+                if lip_seq.size(1) == 20:
+                    lip_20 = lip_seq.squeeze(2)  # (B, 20, 96, 96)
+                elif lip_seq.size(2) == 20:
+                    lip_20 = lip_seq.squeeze(1)  # (B, 20, 96, 96)
+                else:
+                    lip_20 = lip_seq.view(lip_seq.size(0), 20, 96, 96)
+            else:
+                lip_20 = lip_seq
+
+            # Mouth opening cavity is darker than skin, so invert to represent opening extent
+            v_motion = -lip_20.mean(dim=(-1, -2))  # (B, 20)
+
+            v_std = torch.std(v_motion, dim=-1, keepdim=True) + 1e-5
+            a_std = torch.std(a_energy_down, dim=-1, keepdim=True) + 1e-5
+            v_norm = (v_motion - torch.mean(v_motion, dim=-1, keepdim=True)) / v_std
+            a_norm = (a_energy_down - torch.mean(a_energy_down, dim=-1, keepdim=True)) / a_std
+
+            # Pearson temporal correlation in [-1.0, 1.0]
+            temporal_corr = torch.mean(v_norm * a_norm, dim=-1)
+            temporal_score = torch.clamp((temporal_corr + 1.0) / 2.0, 0.0, 1.0)
+
+            # Fused score
+            score = 0.35 * base_score + 0.65 * temporal_score
+        except Exception:
+            score = base_score
+
         return score
 
 

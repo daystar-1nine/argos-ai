@@ -61,8 +61,8 @@ def generate_synthetic_benchmark_dataset(num_samples: int = 240):
         p75_s = mean_s + np.random.uniform(0.02, 0.06)
         p90_s = mean_s + np.random.uniform(0.04, 0.08)
         max_s = min(1.0, mean_s + np.random.uniform(0.05, 0.12))
-        anom_count = float(np.random.choice([0, 1, 2]))
-        total_w = np.random.uniform(20.0, 100.0)
+        total_w = np.random.uniform(6.0, 60.0)
+        anom_count = float(int(anomaly_ratio * total_w))
 
         real_vec = np.array([
             mean_s, std_s, min_s, p10_s, p25_s, p50_s, anomaly_ratio, high_risk_ratio,
@@ -73,14 +73,14 @@ def generate_synthetic_benchmark_dataset(num_samples: int = 240):
         samples.append((real_vec, 0))  # Class 0 = REAL
 
         # 2. Manipulated / Lip-Sync Desynced Media (FAKE) Feature Vector
-        fake_mean_s = np.random.uniform(0.32, 0.54)
-        fake_std_s = np.random.uniform(0.15, 0.28)
-        fake_min_s = np.random.uniform(0.12, 0.32)
-        fake_p10_s = np.random.uniform(0.18, 0.36)
-        fake_p25_s = np.random.uniform(0.24, 0.44)
+        fake_mean_s = np.random.uniform(0.40, 0.72)
+        fake_std_s = np.random.uniform(0.12, 0.28)
+        fake_min_s = np.random.uniform(0.15, 0.48)
+        fake_p10_s = np.random.uniform(0.20, 0.52)
+        fake_p25_s = np.random.uniform(0.25, 0.58)
         fake_p50_s = fake_mean_s
         fake_anomaly_ratio = np.random.uniform(0.42, 0.95)
-        fake_high_risk_ratio = np.random.uniform(0.20, 0.70)
+        fake_high_risk_ratio = np.random.uniform(0.0, 0.50)
         fake_max_run_ratio = np.random.uniform(0.25, 0.75)
         fake_num_intervals = float(np.random.choice([1, 2, 3, 4]))
         fake_motion_mean = np.random.uniform(0.05, 0.18)
@@ -95,8 +95,8 @@ def generate_synthetic_benchmark_dataset(num_samples: int = 240):
         fake_p75_s = fake_mean_s + np.random.uniform(0.06, 0.14)
         fake_p90_s = fake_mean_s + np.random.uniform(0.10, 0.20)
         fake_max_s = min(1.0, fake_mean_s + np.random.uniform(0.15, 0.30))
-        fake_anom_count = float(np.random.randint(10, 80))
         fake_total_w = total_w
+        fake_anom_count = float(int(fake_anomaly_ratio * fake_total_w))
 
         fake_vec = np.array([
             fake_mean_s, fake_std_s, fake_min_s, fake_p10_s, fake_p25_s, fake_p50_s,
@@ -123,18 +123,13 @@ def train_and_save_baseline_models():
     print("=" * 60)
     print(f"Device: {DEVICE}")
 
-    # 1. Initialize & Save SyncNet Baseline Architecture
-    print("\n[1/2] Initializing SyncNet Audio-Visual Spatiotemporal Model...")
-    syncnet = SyncNet(EMBEDDING_DIM).to(DEVICE)
-    # Initialize weights with Xavier Normalization
-    for m in syncnet.modules():
-        if isinstance(m, (nn.Conv2d, nn.Conv3d, nn.Linear)):
-            nn.init.xavier_normal_(m.weight)
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-    
-    torch.save(syncnet.state_dict(), SYNCNET_WEIGHTS_PATH)
-    print(f"[OK] Saved SyncNet weights to: {SYNCNET_WEIGHTS_PATH} ({SYNCNET_WEIGHTS_PATH.stat().st_size / 1024:.1f} KB)")
+    # 1. Verify or Train SyncNet Audio-Visual Spatiotemporal Model
+    print("\n[1/2] Checking SyncNet Audio-Visual Spatiotemporal Model...")
+    if not SYNCNET_WEIGHTS_PATH.exists():
+        from scripts.train_syncnet_contrastive import train_syncnet
+        train_syncnet(epochs=8, batches_per_epoch=4)
+    else:
+        print(f"[OK] Calibrated SyncNet weights already present at: {SYNCNET_WEIGHTS_PATH}")
 
     # 2. Train Multimodal Classifier on Benchmark Distributions
     print("\n[2/2] Training Multimodal Real/Fake Deepfake Classifier...")

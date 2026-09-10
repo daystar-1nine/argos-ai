@@ -19,6 +19,7 @@ from app.api.routes.subscription import router as subscription_router
 from app.api.routes.usage import router as usage_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.protection import router as protection_router
+from app.api.routes.test_lab import router as test_lab_router
 
 # Existing Application Routers
 from app.api.v1.authenticity import router as authenticity_router
@@ -44,6 +45,7 @@ api_router.include_router(subscription_router)
 api_router.include_router(usage_router)
 api_router.include_router(notifications_router)
 api_router.include_router(protection_router)
+api_router.include_router(test_lab_router)
 
 # Compatibility Routers
 api_router.include_router(authenticity_router)

@@ -11,3 +11,5 @@ backend/temp/
 backend/static/evidence/
 backend/storage/
 *.db
+.pytest_cache/
+

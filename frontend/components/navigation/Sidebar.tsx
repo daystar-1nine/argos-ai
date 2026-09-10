@@ -37,6 +37,7 @@ export default function Sidebar() {
     { href: '/monitor', label: 'Monitor', icon: Globe },
     { href: '/detections', label: 'Detections', icon: Eye },
     { href: '/attack-lab', label: 'Attack Lab', icon: Zap },
+    { href: '/test-lab', label: 'Test Lab (ML)', icon: Zap, badge: 'REAL' },
     { href: '/alerts', label: 'Alerts', icon: Bell, badge: '3' },
     { href: '/incidents', label: 'Incidents', icon: Scale },
     { href: '/reports', label: 'Reports', icon: FileText },

@@ -1,0 +1,70 @@
+{
+  "video": "fake_01.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\test\\fake\\fake_01.mp4",
+  "video_id": "fake_01",
+  "ground_truth": "fake",
+  "prediction": "potentially_manipulated",
+  "verdict": "POTENTIALLY_MANIPULATED",
+  "confidence": 0.5597,
+  "confidence_pct": 56.0,
+  "real_probability": 0.4403,
+  "fake_probability": 0.5597,
+  "sync_score": 0.69,
+  "visual_score": 95.0,
+  "audio_score": 76.9,
+  "temporal_mismatch_ms": "-120ms",
+  "suspicious_windows": [
+    {
+      "start": 0.0,
+      "end": 2.2,
+      "start_timecode": "00:00.00",
+      "end_timecode": "00:02.20",
+      "sync_score": 0.69,
+      "severity": "MEDIUM",
+      "reason": "Temporal Lip-Sync Anomaly (MEDIUM RISK, Sync=69.0%)"
+    }
+  ],
+  "evidence_frames": [
+    {
+      "frame_number": 0,
+      "timestamp": "00:00.00",
+      "timestamp_sec": 0.0,
+      "sync_score": 0.69,
+      "severity": "MEDIUM",
+      "file_name": "frame_0000.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_01\\frame_0000.jpg",
+      "url": "/api/test-lab/evidence/fake_01/frame_0000.jpg"
+    }
+  ],
+  "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\fake_01_timeline.csv",
+  "metadata": {
+    "duration_sec": 2.2,
+    "fps": 25.0,
+    "resolution": "320x240",
+    "total_frames": 55,
+    "audio": "AVAILABLE",
+    "face": "DETECTED"
+  },
+  "processing": {
+    "device": "CPU (Multi-Threaded)",
+    "duration_seconds": 0.4,
+    "timings": {
+      "preprocessing": 0.084,
+      "vision": 0.111,
+      "audio": 0.004,
+      "av_sync": 0.188,
+      "classifier": 0.0,
+      "evidence": 0.001,
+      "total": 0.4
+    }
+  },
+  "model": {
+    "model_name": "ARGOS-AV-Detector",
+    "model_version": "1.0.0",
+    "weights_version": "syncnet-v1.0-classifier-v1.0",
+    "pipeline_version": "1.0.0",
+    "device": "CPU (Multi-Threaded)"
+  },
+  "status": "completed",
+  "debug": null
+}

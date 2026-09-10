@@ -1,0 +1,89 @@
+{
+  "video": "fake_02.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\test\\fake\\fake_02.mp4",
+  "video_id": "fake_02",
+  "ground_truth": "fake",
+  "prediction": "potentially_manipulated",
+  "verdict": "POTENTIALLY_MANIPULATED",
+  "confidence": 0.6157,
+  "confidence_pct": 61.6,
+  "real_probability": 0.3843,
+  "fake_probability": 0.6157,
+  "sync_score": 0.637,
+  "visual_score": 95.0,
+  "audio_score": 59.3,
+  "temporal_mismatch_ms": "+120ms",
+  "suspicious_windows": [
+    {
+      "start": 0.0,
+      "end": 1.8,
+      "start_timecode": "00:00.00",
+      "end_timecode": "00:01.80",
+      "sync_score": 0.6,
+      "severity": "HIGH",
+      "reason": "Temporal Lip-Sync Anomaly (HIGH RISK, Sync=60.0%)"
+    },
+    {
+      "start": 1.4,
+      "end": 2.6,
+      "start_timecode": "00:01.40",
+      "end_timecode": "00:02.60",
+      "sync_score": 0.659,
+      "severity": "MEDIUM",
+      "reason": "Temporal Lip-Sync Anomaly (MEDIUM RISK, Sync=65.9%)"
+    }
+  ],
+  "evidence_frames": [
+    {
+      "frame_number": 10,
+      "timestamp": "00:00.40",
+      "timestamp_sec": 0.4,
+      "sync_score": 0.6,
+      "severity": "HIGH",
+      "file_name": "frame_0010.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_02\\frame_0010.jpg",
+      "url": "/api/test-lab/evidence/fake_02/frame_0010.jpg"
+    },
+    {
+      "frame_number": 35,
+      "timestamp": "00:01.40",
+      "timestamp_sec": 1.4,
+      "sync_score": 0.659,
+      "severity": "MEDIUM",
+      "file_name": "frame_0035.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_02\\frame_0035.jpg",
+      "url": "/api/test-lab/evidence/fake_02/frame_0035.jpg"
+    }
+  ],
+  "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\fake_02_timeline.csv",
+  "metadata": {
+    "duration_sec": 2.6,
+    "fps": 25.0,
+    "resolution": "320x240",
+    "total_frames": 65,
+    "audio": "AVAILABLE",
+    "face": "DETECTED"
+  },
+  "processing": {
+    "device": "CPU (Multi-Threaded)",
+    "duration_seconds": 0.44,
+    "timings": {
+      "preprocessing": 0.097,
+      "vision": 0.107,
+      "audio": 0.004,
+      "av_sync": 0.221,
+      "classifier": 0.0,
+      "evidence": 0.001,
+      "total": 0.44
+    }
+  },
+  "model": {
+    "model_name": "ARGOS-AV-Detector",
+    "model_version": "1.0.0",
+    "weights_version": "syncnet-v1.0-classifier-v1.0",
+    "pipeline_version": "1.0.0",
+    "device": "CPU (Multi-Threaded)"
+  },
+  "status": "completed",
+  "debug": null
+}

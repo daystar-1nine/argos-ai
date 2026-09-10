@@ -1,0 +1,60 @@
+{
+  "video": "real_03.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\test\\real\\real_03.mp4",
+  "video_id": "real_03",
+  "ground_truth": "real",
+  "prediction": "real",
+  "verdict": "REAL",
+  "confidence": 0.6961,
+  "confidence_pct": 69.6,
+  "real_probability": 0.6961,
+  "fake_probability": 0.3039,
+  "sync_score": 0.927,
+  "visual_score": 95.0,
+  "audio_score": 100.0,
+  "temporal_mismatch_ms": "-80ms",
+  "suspicious_windows": [],
+  "evidence_frames": [
+    {
+      "frame_number": 10,
+      "timestamp": "00:00.40",
+      "timestamp_sec": 0.4,
+      "sync_score": 0.88,
+      "severity": "NORMAL",
+      "file_name": "frame_0010.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\real_03\\frame_0010.jpg",
+      "url": "/api/test-lab/evidence/real_03/frame_0010.jpg"
+    }
+  ],
+  "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\real_03_timeline.csv",
+  "metadata": {
+    "duration_sec": 3.0,
+    "fps": 25.0,
+    "resolution": "320x240",
+    "total_frames": 75,
+    "audio": "AVAILABLE",
+    "face": "DETECTED"
+  },
+  "processing": {
+    "device": "CPU (Multi-Threaded)",
+    "duration_seconds": 0.51,
+    "timings": {
+      "preprocessing": 0.083,
+      "vision": 0.133,
+      "audio": 0.005,
+      "av_sync": 0.269,
+      "classifier": 0.001,
+      "evidence": 0.001,
+      "total": 0.51
+    }
+  },
+  "model": {
+    "model_name": "ARGOS-AV-Detector",
+    "model_version": "1.0.0",
+    "weights_version": "syncnet-v1.0-classifier-v1.0",
+    "pipeline_version": "1.0.0",
+    "device": "CPU (Multi-Threaded)"
+  },
+  "status": "completed",
+  "debug": null
+}
