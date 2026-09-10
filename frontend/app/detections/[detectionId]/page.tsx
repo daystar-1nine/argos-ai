@@ -21,8 +21,10 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { DEMO_FORENSIC_ANALYSIS, DEMO_ASSET } from '@/lib/data';
+import ForensicComparison from '@/components/forensics/ForensicComparison';
 
 export default function ForensicDetectionDetailPage() {
+
   const params = useParams();
   const detectionId = (params.detectionId as string) || 'match_01';
 
@@ -70,115 +72,12 @@ export default function ForensicDetectionDetailPage() {
             {/* Left 8 Cols: Video Scrubber, Waveform, Lip graph & Timeline */}
             <div className="lg:col-span-8 space-y-6">
               
-              {/* Dual Frame Comparison Box */}
-              <div className="bg-[#0f172a] border-[3px] border-[#111111] p-4 text-white brutal-shadow">
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  {/* Original Authentic Video */}
-                  <div className="aspect-video bg-black/60 border border-white/20 relative flex items-center justify-center p-2">
-                    <div className="w-20 h-24 border-2 border-[#8BCF9B] rounded-full flex flex-col items-center justify-center">
-                      <div className="flex justify-between w-12 mb-2">
-                        <span className="w-2 h-1 bg-[#8BCF9B]" />
-                        <span className="w-2 h-1 bg-[#8BCF9B]" />
-                      </div>
-                      <span className="w-6 h-1 bg-[#8BCF9B] rounded-sm" />
-                    </div>
-                    <div className="absolute top-2 left-2 bg-[#8BCF9B] text-black font-black text-[9px] px-1.5 py-0.5">
-                      ORIGINAL MASTER
-                    </div>
-                    <div className="absolute bottom-2 left-2 text-[8px] text-[#8BCF9B] font-bold">
-                      C2PA: VALID
-                    </div>
-                  </div>
+              {/* Real Media Forensic Comparison Feed */}
+              <ForensicComparison
+                initialTime={15.4}
+                initialViewMode="split"
+              />
 
-                  {/* Suspected Manipulated Video */}
-                  <div className="aspect-video bg-black/60 border border-[#D95D5D] relative flex items-center justify-center p-2">
-                    <div className="w-20 h-24 border-2 border-dashed border-[#D95D5D] rounded-full flex flex-col items-center justify-center bg-[#D95D5D]/10">
-                      <div className="flex justify-between w-12 mb-2">
-                        <span className="w-2 h-1 bg-[#D95D5D]" />
-                        <span className="w-2 h-1 bg-[#D95D5D]" />
-                      </div>
-                      <span className="w-8 h-2.5 bg-[#D95D5D] rounded-sm animate-pulse" />
-                    </div>
-                    <div className="absolute top-2 left-2 bg-[#D95D5D] text-white font-black text-[9px] px-1.5 py-0.5">
-                      SUSPECT DERIVATIVE
-                    </div>
-                    <div className="absolute bottom-2 right-2 text-[8px] text-[#D95D5D] font-bold">
-                      VISEME LAG +320ms
-                    </div>
-                  </div>
-                </div>
-
-                {/* Waveform & Lip Movement Real-time Signals */}
-                <div className="bg-black/70 p-3 border border-white/20 space-y-3">
-                  
-                  {/* Audio Waveform */}
-                  <div>
-                    <div className="flex justify-between text-[10px] text-[#F4CD3F] mb-1">
-                      <span>AUDIO SPECTRAL WAVEFORM (VOCODER SYNTHESIS):</span>
-                      <span className="text-[#D95D5D] font-bold">ANOMALY 62%</span>
-                    </div>
-                    <div className="text-xs text-[#F4CD3F]">
-                      ████████████████
-                    </div>
-                  </div>
-
-                  {/* Lip Movement */}
-                  <div>
-                    <div className="flex justify-between text-[10px] text-[#8BCF9B] mb-1">
-                      <span>LIP MOVEMENT (VISEME ALIGNMENT):</span>
-                      <span className="text-[#D95D5D] font-bold">DESYNC 91%</span>
-                    </div>
-                    <div className="text-xs text-[#8BCF9B]">
-                      ██████░░████████
-                    </div>
-                  </div>
-
-                  {/* Temporal Alignment Graph */}
-                  <div className="flex justify-between items-center text-xs pt-2 border-t border-white/20">
-                    <span className="text-white/70">TEMPORAL MISMATCH LAG:</span>
-                    <span className="font-black text-[#D95D5D]">
-                      +{analysis.temporalMismatchMs}ms (HIGH RISK)
-                    </span>
-                  </div>
-
-                </div>
-
-                {/* Timeline: 00:00 ───── 00:07 ───── 00:14 ───── 00:18 ───── 00:32 */}
-                <div className="mt-4 pt-3 border-t border-white/20">
-                  <div className="text-[11px] text-white/70 mb-2 flex justify-between">
-                    <span>FORENSIC TIMELINE (CLICK TO SCRUB):</span>
-                    <span className="text-[#F4CD3F] font-bold">{currentSegment.start} – {currentSegment.end}</span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-1.5 text-center text-[9px] font-bold">
-                    {analysis.timelineSegments.map((seg, idx) => {
-                      const isSelected = selectedSegmentIdx === idx;
-                      const style = seg.status === 'normal' 
-                        ? 'bg-[#8BCF9B]/30 border-[#8BCF9B] text-[#8BCF9B]' 
-                        : seg.status === 'suspicious' 
-                        ? 'bg-[#F4CD3F]/40 border-[#F4CD3F] text-[#F4CD3F]' 
-                        : 'bg-[#D95D5D]/60 border-[#D95D5D] text-white';
-
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => setSelectedSegmentIdx(idx)}
-                          className={`p-2 border-2 transition-all ${style} ${
-                            isSelected ? 'ring-2 ring-white scale-[1.02]' : 'opacity-80 hover:opacity-100'
-                          }`}
-                        >
-                          <div>{seg.start} – {seg.end}</div>
-                          <div className="mt-0.5 uppercase text-[8px]">
-                            {seg.status === 'high_risk' ? 'HIGH RISK' : seg.status}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
 
               {/* Segment Analysis Explanatory Callout */}
               <div className="p-4 bg-white border-[2.5px] border-[#111111] brutal-shadow font-mono text-xs">

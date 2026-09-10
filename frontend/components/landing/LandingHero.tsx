@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Play, Pause, RotateCcw, Volume2, Activity, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+
+import { Play, Pause, RotateCcw, Volume2, Activity, ArrowRight, ShieldCheck, Sparkles, Zap } from 'lucide-react';
+import ComparisonMedia from '@/components/forensics/ComparisonMedia';
 
 export default function LandingHero() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(15.4); // zone 00:14 - 00:18
   const [crtFlicker, setCrtFlicker] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(true);
+
 
   useEffect(() => {
     let timer: any;
@@ -122,46 +126,34 @@ export default function LandingHero() {
                   </span>
                 </div>
 
-                {/* Dual Screen Comparison */}
-                <div className="grid grid-cols-2 gap-2 my-3">
-                  
-                  {/* Original Authentic Screen */}
-                  <div className="relative aspect-[4/3] bg-[#1a212d] border-[2px] border-[#8BCF9B] flex flex-col items-center justify-center p-2">
-                    <div className="w-16 h-20 sm:w-20 sm:h-24 border-2 border-[#8BCF9B] rounded-full flex flex-col items-center justify-center relative">
-                      <div className="flex justify-between w-10 sm:w-12 mb-1.5">
-                        <span className="w-1.5 h-1 bg-[#8BCF9B]" />
-                        <span className="w-1.5 h-1 bg-[#8BCF9B]" />
-                      </div>
-                      <span className="w-0.5 h-2 bg-[#8BCF9B]/60 mb-1.5" />
-                      <span className="w-5 h-1 bg-[#8BCF9B] rounded-sm" />
-                    </div>
-                    <div className="absolute top-1 left-1 bg-[#8BCF9B] text-black font-mono text-[8px] sm:text-[9px] font-black px-1">
-                      ORIGINAL
-                    </div>
-                    <div className="absolute bottom-1 left-1 font-mono text-[7px] text-[#8BCF9B] bg-black/80 px-1">
-                      PROVENANCE: VALID ✓
-                    </div>
-                  </div>
-
-                  {/* Manipulated Derivative Screen */}
-                  <div className="relative aspect-[4/3] bg-[#22161f] border-[2px] border-[#D95D5D] flex flex-col items-center justify-center p-2">
-                    <div className={`w-16 h-20 sm:w-20 sm:h-24 border-2 ${isAnomaly ? 'border-dashed border-[#D95D5D]' : 'border-white/40'} rounded-full flex flex-col items-center justify-center relative`}>
-                      <div className="flex justify-between w-10 sm:w-12 mb-1.5">
-                        <span className="w-1.5 h-1 bg-white/60" />
-                        <span className="w-1.5 h-1 bg-white/60" />
-                      </div>
-                      <span className="w-0.5 h-2 bg-white/40 mb-1.5" />
-                      <span className={`w-6 h-2 ${isAnomaly ? 'bg-[#D95D5D] animate-pulse' : 'bg-white/60'} rounded-sm`} />
-                    </div>
-                    <div className="absolute top-1 left-1 bg-[#D95D5D] text-white font-mono text-[8px] sm:text-[9px] font-black px-1">
-                      MANIPULATED
-                    </div>
-                    <div className="absolute bottom-1 right-1 font-mono text-[7px] text-[#D95D5D] bg-black/80 px-1">
-                      SRC: PUBLIC INDEX
-                    </div>
-                  </div>
-
+                {/* Real Media Dual Screen Comparison */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 my-3">
+                  <ComparisonMedia
+                    variant="original"
+                    src="/demo/original/original-01.jpg"
+                    title="ORIGINAL [VERIFIED]"
+                    badge="✓ PROVENANCE VALID"
+                    isAnomaly={false}
+                    showOverlay={showOverlay}
+                    timestamp={currentTime}
+                    frameNumber={Math.floor(currentTime * 30)}
+                    compact={true}
+                  />
+                  <ComparisonMedia
+                    variant="manipulated"
+                    src={isAnomaly ? "/demo/manipulated/manipulated-01.jpg" : "/demo/manipulated/manipulated-01-normal.jpg"}
+                    title="MANIPULATED [DETECTED]"
+                    badge={isAnomaly ? "⚠ ANOMALY DETECTED" : "INDEXED DERIVATIVE"}
+                    isAnomaly={isAnomaly}
+                    showOverlay={showOverlay}
+                    timestamp={currentTime}
+                    frameNumber={Math.floor(currentTime * 30)}
+                    anomalyLabel="LIP-SYNC ANOMALY +320ms"
+                    riskPct={riskScore}
+                    compact={true}
+                  />
                 </div>
+
 
                 {/* Waveform Visualizer */}
                 <div className="bg-black/70 p-2 border border-white/20 font-mono text-[9px] space-y-1">
@@ -216,18 +208,28 @@ export default function LandingHero() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsPlaying(!isPlaying)}
-                      className="px-2 py-1 bg-[#EFD99C] hover:bg-[#F4CD3F] text-black font-bold text-[10px]"
+                      className="px-2 py-1 bg-[#EFD99C] hover:bg-[#F4CD3F] text-black font-bold text-[10px] cursor-pointer"
                     >
                       {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                     </button>
                     <button
                       onClick={() => setCurrentTime(15.4)}
-                      className="px-2 py-1 bg-[#F6C6D8] hover:bg-[#ffb3cc] text-black font-bold text-[10px] flex items-center gap-1"
+                      className="px-2.5 py-1 bg-[#D95D5D] hover:bg-[#ff7373] text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                      title="Seek to high risk anomaly"
                     >
-                      <RotateCcw className="w-2.5 h-2.5" />
-                      JUMP 00:15
+                      <Zap className="w-2.5 h-2.5" />
+                      JUMP TO ANOMALY
+                    </button>
+                    <button
+                      onClick={() => setShowOverlay(!showOverlay)}
+                      className={`px-2 py-1 border border-white/40 text-[9px] font-bold cursor-pointer ${
+                        showOverlay ? 'bg-[#8BCF9B] text-[#111111]' : 'bg-black text-white/60'
+                      }`}
+                    >
+                      OVERLAY: {showOverlay ? 'ON' : 'OFF'}
                     </button>
                   </div>
+
                   <button
                     onClick={() => setCrtFlicker(!crtFlicker)}
                     className={`px-2 py-0.5 border border-white/40 text-[9px] font-bold ${

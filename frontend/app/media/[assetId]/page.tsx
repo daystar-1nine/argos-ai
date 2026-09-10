@@ -147,16 +147,17 @@ export default function MediaDetailPage() {
                   <span>MASTER FOOTAGE PREVIEW</span>
                   <span className="text-[#8BCF9B]">3840x2160 @ 60fps</span>
                 </div>
-                <div className="aspect-video bg-[#1a212d] flex items-center justify-center text-white relative">
-                  <div className="w-24 h-28 border-2 border-[#8BCF9B] rounded-full flex flex-col items-center justify-center">
-                    <div className="flex justify-between w-14 mb-2">
-                      <span className="w-2 h-1 bg-[#8BCF9B]" />
-                      <span className="w-2 h-1 bg-[#8BCF9B]" />
-                    </div>
-                    <span className="w-6 h-1 bg-[#8BCF9B] rounded-sm" />
+                <div className="relative aspect-video bg-[#05080c] overflow-hidden">
+                  <img
+                    src="/demo/original/original-01.jpg"
+                    alt="Master Protected Footage"
+                    className="w-full h-full object-cover object-center select-none"
+                  />
+                  <div className="absolute top-2 right-2 font-mono text-[10px] bg-[#8BCF9B] text-[#111111] px-2 py-0.5 font-bold border border-[#111111]">
+                    ✓ C2PA VERIFIED
                   </div>
-                  <div className="absolute bottom-2 left-2 font-mono text-[10px] bg-black/80 px-2 py-0.5 text-[#F4CD3F]">
-                    INTRINSIC WATERMARK: ACTIVE
+                  <div className="absolute bottom-2 left-2 font-mono text-[10px] bg-black/80 px-2 py-0.5 text-[#F4CD3F] border border-white/20">
+                    INTRINSIC WATERMARK: ACTIVE [PROVENANCE VALID]
                   </div>
                 </div>
               </div>

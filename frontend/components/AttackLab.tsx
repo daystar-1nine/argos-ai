@@ -18,6 +18,7 @@ import {
 import { AttackType } from '@/lib/types';
 import { ATTACK_RESPONSES, DEMO_ASSET } from '@/lib/data';
 import ArgosLoader from '@/components/ui/ArgosLoader';
+import ComparisonMedia from '@/components/forensics/ComparisonMedia';
 
 
 export default function AttackLab() {
@@ -111,123 +112,41 @@ export default function AttackLab() {
             <div className="lg:col-span-7 flex flex-col justify-between">
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* ORIGINAL Card */}
-                <div className="bg-white border-[3px] border-[#111111] brutal-shadow-sm flex flex-col overflow-hidden">
-                  <div className="p-2.5 bg-[#EFD99C] border-b-[2px] border-[#111111] font-mono text-xs font-black uppercase flex items-center justify-between">
-                    <span>ORIGINAL [PROTECTED]</span>
-                    <span className="text-[#8BCF9B] bg-black px-1.5 py-0.2 text-[9px]">C2PA SIGNED</span>
-                  </div>
+                <ComparisonMedia
+                  variant="original"
+                  src="/demo/original/original-01.jpg"
+                  title="ORIGINAL [PROTECTED]"
+                  badge="C2PA SIGNED"
+                  timestamp="00:14.00"
+                  frameNumber={420}
+                />
 
-                  {/* Frame visual */}
-                  <div className="relative aspect-video bg-[#1e293b] flex items-center justify-center p-4">
-                    {/* Face Wireframe Baseline */}
-                    <div className="w-24 h-28 border-2 border-[#8BCF9B] rounded-full flex flex-col items-center justify-center relative">
-                      <div className="flex justify-between w-14 mb-2">
-                        <span className="w-2 h-1 bg-[#8BCF9B]" />
-                        <span className="w-2 h-1 bg-[#8BCF9B]" />
-                      </div>
-                      <span className="w-0.5 h-3 bg-[#8BCF9B]/60 mb-2" />
-                      <span className="w-6 h-1 bg-[#8BCF9B] rounded-sm" />
-                      
-                      {/* Watermark security grid overlay */}
-                      <div className="absolute inset-0 bg-radial from-transparent to-black/30 pointer-events-none" />
-                      <div className="absolute top-1 left-1 text-[7px] font-mono text-[#8BCF9B]">WM: EMBEDDED</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2 font-mono text-[10px] text-gray-600 bg-white border-t border-[#111111] flex justify-between">
-                    <span>SENSOR PRNU: PRISTINE</span>
-                    <span className="text-[#8BCF9B] font-bold">SHA-256: VALID</span>
-                  </div>
-                </div>
-
-                {/* ATTACKED Card */}
-                <div className="bg-white border-[3px] border-[#111111] brutal-shadow-sm flex flex-col overflow-hidden">
-                  <div className="p-2.5 bg-[#844469] text-white border-b-[2px] border-[#111111] font-mono text-xs font-black uppercase flex items-center justify-between">
-                    <span>ATTACKED DERIVATIVE</span>
-                    <span className="text-[#F4CD3F] bg-black px-1.5 py-0.2 text-[9px]">
-                      {isSimulating ? "INJECTING..." : "ANOMALY FOUND"}
-                    </span>
-                  </div>
-
-                  {/* Frame visual under attack */}
-                  <div className="relative aspect-video bg-[#1e293b] flex items-center justify-center p-4 overflow-hidden">
-                    {/* Visual variations per attack */}
-                    {selectedAttack === 'face_swap' && (
-                      <div className="w-24 h-28 border-2 border-dashed border-[#D95D5D] rounded-full flex flex-col items-center justify-center relative bg-[#D95D5D]/10">
-                        <div className="flex justify-between w-14 mb-2">
-                          <span className="w-2 h-1 bg-[#D95D5D]" />
-                          <span className="w-2 h-1 bg-[#D95D5D]" />
-                        </div>
-                        <span className="w-0.5 h-3 bg-[#D95D5D]/60 mb-2" />
-                        <span className="w-8 h-2 bg-[#D95D5D] rounded-sm animate-pulse" />
-                        <div className="absolute -top-2 bg-[#D95D5D] text-white font-mono text-[8px] font-bold px-1">
-                          FACE BLEND WARP
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'lip_sync' && (
-                      <div className="w-24 h-28 border-2 border-[#8BCF9B] rounded-full flex flex-col items-center justify-center relative">
-                        <div className="flex justify-between w-14 mb-2">
-                          <span className="w-2 h-1 bg-[#8BCF9B]" />
-                          <span className="w-2 h-1 bg-[#8BCF9B]" />
-                        </div>
-                        <span className="w-0.5 h-3 bg-[#8BCF9B]/60 mb-2" />
-                        <span className="w-10 h-3 bg-[#D95D5D] rounded-md border border-white animate-pulse" />
-                        <div className="absolute bottom-1 bg-[#D95D5D] text-white font-mono text-[8px] font-black px-1">
-                          VISEME LAG +320ms
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'audio_replacement' && (
-                      <div className="flex flex-col items-center justify-center text-center font-mono">
-                        <div className="flex items-end gap-1 h-14 mb-2">
-                          {[15, 30, 45, 90, 85, 20, 10, 80, 95, 40].map((h, i) => (
-                            <div key={i} className="w-1.5 bg-[#D95D5D]" style={{ height: `${h}%` }} />
-                          ))}
-                        </div>
-                        <span className="text-[9px] bg-[#D95D5D] text-white font-bold px-1">
-                          VOICE CLONE VOCODER DETECTED
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'ai_regeneration' && (
-                      <div className="w-full h-full border border-dashed border-[#D95D5D] bg-[#844469]/20 flex flex-col items-center justify-center font-mono text-[9px] text-[#F4CD3F]">
-                        <span className="bg-black/90 p-1 font-bold">DIFFUSION INPAINTING: 34% RE-RENDERED</span>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'crop' && (
-                      <div className="w-3/4 h-3/4 border-2 border-[#F4CD3F] flex items-center justify-center font-mono text-[9px] text-white bg-black/40">
-                        <span>20% PERIPHERAL CROP</span>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'resize' && (
-                      <div className="text-center font-mono text-[10px] text-[#EFD99C]">
-                        <span>DOWNSAMPLED: 4K → 720p</span>
-                        <div className="text-[8px] text-[#8BCF9B] mt-1">BENIGN TRANSCODE CONFIRMED</div>
-                      </div>
-                    )}
-
-                    {selectedAttack === 'compression' && (
-                      <div className="text-center font-mono text-[10px] text-[#EFD99C]">
-                        <span>H.264 CRF 28 RE-ENCODE</span>
-                        <div className="text-[8px] text-[#8BCF9B] mt-1">WATERMARK RESILIENT</div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-2 font-mono text-[10px] text-gray-700 bg-white border-t border-[#111111] flex justify-between">
-                    <span>TAMPER HEAT: {attackResult.tamperHeatScore}%</span>
-                    <span className="font-bold text-[#844469]">DERIVATIVE AUDITED</span>
-                  </div>
-                </div>
-
+                <ComparisonMedia
+                  variant="manipulated"
+                  src={
+                    selectedAttack === 'face_swap' 
+                      ? '/demo/manipulated/manipulated-02.jpg' 
+                      : (selectedAttack === 'ai_regeneration' 
+                          ? '/demo/manipulated/manipulated-01-suspicious.jpg' 
+                          : (selectedAttack === 'crop' || selectedAttack === 'resize' || selectedAttack === 'compression'
+                              ? '/demo/manipulated/manipulated-01-normal.jpg'
+                              : '/demo/manipulated/manipulated-01.jpg'))
+                  }
+                  title="ATTACKED DERIVATIVE"
+                  badge={isSimulating ? "INJECTING..." : (attackResult.manipulationDetected ? "ANOMALY FOUND" : "BENIGN DERIVATIVE")}
+                  isAnomaly={attackResult.manipulationDetected}
+                  riskPct={attackResult.tamperHeatScore}
+                  anomalyLabel={
+                    selectedAttack === 'face_swap' ? "FACE BLEND WARP [94%]" :
+                    selectedAttack === 'lip_sync' ? "VISEME LAG +320ms" :
+                    selectedAttack === 'audio_replacement' ? "VOCODER ANOMALY DETECTED" :
+                    selectedAttack === 'ai_regeneration' ? "DIFFUSION INPAINTING: 34%" :
+                    selectedAttack === 'crop' ? "20% PERIPHERAL CROP DETECTED" :
+                    selectedAttack === 'resize' ? "DOWNSAMPLED: 4K → 720p" : "H.264 CRF 28 RE-ENCODE"
+                  }
+                  timestamp="00:14.00"
+                  frameNumber={420}
+                />
               </div>
 
               {/* Technical Analysis Notes below comparison */}
