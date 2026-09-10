@@ -15,18 +15,11 @@ import {
 } from 'lucide-react';
 import { DEMO_MATCHES, DEMO_MONITORING_SOURCES } from '@/lib/data';
 import { DetectedMatch } from '@/lib/types';
+import ArgosGlobeWrapper from '@/components/monitoring/ArgosGlobeWrapper';
 
 export default function GlobalWatch({ onSelectMatch }: { onSelectMatch?: (match: DetectedMatch) => void }) {
   const [selectedMatch, setSelectedMatch] = useState<DetectedMatch>(DEMO_MATCHES[0]);
   const [activeRegion, setActiveRegion] = useState<string>('All');
-
-  const regions = [
-    { name: 'India', coords: { x: 70, y: 48 }, status: 'Active (4 nodes)' },
-    { name: 'USA', coords: { x: 22, y: 35 }, status: 'Active (12 nodes)' },
-    { name: 'UK', coords: { x: 48, y: 28 }, status: 'Active (6 nodes)' },
-    { name: 'Singapore', coords: { x: 76, y: 56 }, status: 'Active (3 nodes)' },
-    { name: 'Australia', coords: { x: 86, y: 72 }, status: 'Active (3 nodes)' }
-  ];
 
   return (
     <section id="global-watch" className="w-full py-20 px-4 lg:px-8 bg-[#EFD99C] border-b-[3px] border-[#111111]">
@@ -86,71 +79,34 @@ export default function GlobalWatch({ onSelectMatch }: { onSelectMatch?: (match:
         {/* Main Watch Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left 7 Cols: Interactive World Map with Regional Nodes */}
-          <div className="lg:col-span-7 bg-[#111111] border-[4px] border-[#111111] brutal-shadow-xl p-5 text-[#EFD99C] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/20 font-mono text-xs">
-                <span className="text-[#F4CD3F] font-bold flex items-center gap-2">
-                  <Globe className="w-4 h-4" />
-                  GLOBAL TELEMETRY SENSOR GRID
-                </span>
-                <span className="text-white/60 text-[10px]">
-                  5 REGIONS ACTIVE
+          {/* Left 7 Cols: Interactive 3D WebGL Argos Globe */}
+          <div className="lg:col-span-7 flex flex-col space-y-3">
+            <ArgosGlobeWrapper
+              selectedRegion={activeRegion}
+              onSelectRegion={(reg) => setActiveRegion(reg)}
+              highlightedDetectionId={selectedMatch.id}
+            />
+
+            {/* Region Telemetry Quick Bar */}
+            <div className="p-3 bg-[#111111] border-[2.5px] border-[#111111] text-[#EFD99C] font-mono text-[11px] flex flex-wrap items-center justify-between gap-2 brutal-shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#8BCF9B] led-blink-fast" />
+                <span className="font-bold text-[#F4CD3F]">ACTIVE SENSOR SITES:</span>
+                <span className="text-white/80">
+                  {activeRegion !== 'All'
+                    ? `FOCUSED ON ${activeRegion.toUpperCase()} CLUSTER`
+                    : '5 REGIONAL CLUSTERS LINKED'}
                 </span>
               </div>
-
-              {/* The SVG World Map with Pins */}
-              <div className="relative aspect-[16/9] w-full bg-[#181d24] border-[2px] border-white/20 p-2 overflow-hidden">
-                <div className="absolute inset-0 opacity-15 retro-grid" />
-                
-                {/* Simplified Continents Outline */}
-                <svg className="w-full h-full text-white/15" viewBox="0 0 100 60">
-                  {/* North America */}
-                  <path d="M12,14 Q25,12 32,24 Q24,34 16,30 Z" fill="currentColor" />
-                  {/* South America */}
-                  <path d="M26,35 Q34,36 30,52 Q22,48 26,35 Z" fill="currentColor" />
-                  {/* Europe */}
-                  <path d="M44,14 Q54,12 56,25 Q46,28 44,14 Z" fill="currentColor" />
-                  {/* Africa */}
-                  <path d="M46,28 Q58,28 55,48 Q44,45 46,28 Z" fill="currentColor" />
-                  {/* Asia */}
-                  <path d="M58,12 Q82,10 84,34 Q66,38 58,12 Z" fill="currentColor" />
-                  {/* Australia */}
-                  <path d="M78,42 Q88,40 88,54 Q76,52 78,42 Z" fill="currentColor" />
-                </svg>
-
-                {/* Blinking Regional Markers */}
-                {regions.map((reg) => (
-                  <div
-                    key={reg.name}
-                    style={{ left: `${reg.coords.x}%`, top: `${reg.coords.y}%` }}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-                    onClick={() => setActiveRegion(reg.name)}
-                  >
-                    <div className="relative flex items-center justify-center">
-                      <span className="w-3 h-3 bg-[#D95D5D] border border-white rounded-none led-blink" />
-                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-[9px] bg-black text-[#F4CD3F] px-1 py-0.2 whitespace-nowrap border border-white/30">
-                        {reg.name}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Region Hubs Bar */}
-            <div className="mt-4 pt-3 border-t border-white/20 flex flex-wrap gap-2 font-mono text-[10px]">
-              {regions.map((r) => (
+              {activeRegion !== 'All' && (
                 <button
-                  key={r.name}
-                  onClick={() => setActiveRegion(r.name)}
-                  className={`px-2.5 py-1 border border-white/30 ${
-                    activeRegion === r.name ? 'bg-[#F4CD3F] text-black font-bold' : 'bg-black text-white/80'
-                  }`}
+                  type="button"
+                  onClick={() => setActiveRegion('All')}
+                  className="px-2 py-0.5 bg-[#F4CD3F] text-black font-bold text-[10px] hover:bg-white transition-colors"
                 >
-                  {r.name}: {r.status}
+                  [ RESET TO ALL ]
                 </button>
-              ))}
+              )}
             </div>
           </div>
 
@@ -170,6 +126,13 @@ export default function GlobalWatch({ onSelectMatch }: { onSelectMatch?: (match:
                   key={match.id}
                   onClick={() => {
                     setSelectedMatch(match);
+                    const targetRegion =
+                      match.id === 'match_01'
+                        ? 'India'
+                        : match.id === 'match_02'
+                        ? 'UK'
+                        : 'USA';
+                    setActiveRegion(targetRegion);
                     if (onSelectMatch) onSelectMatch(match);
                   }}
                   className={`border-[3px] border-[#111111] p-4 cursor-pointer transition-all ${
