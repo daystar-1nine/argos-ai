@@ -90,7 +90,19 @@ def test_full_forensic_lifecycle():
     assert "audio_score" in result_data
     assert "sync_score" in result_data
 
-    # 8. Generate Sealed PDF Forensic Report
+    # 8. Upgrade User to PRO & Generate Sealed PDF Forensic Report
+    from app.db.session import SessionLocal
+    from app.db.models.subscription import Subscription
+    from datetime import datetime, timezone, timedelta
+    db = SessionLocal()
+    sub = db.query(Subscription).filter(Subscription.user_id == reg_res.json()["user"]["id"]).first()
+    if sub:
+        sub.plan_id = "pro"
+        sub.status = "active"
+        sub.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        db.commit()
+    db.close()
+
     report_create_res = client.post(
         f"/api/reports/{analysis_id}",
         headers=headers

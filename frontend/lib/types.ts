@@ -1,5 +1,78 @@
 export type MediaType = 'image' | 'video' | 'audio';
 
+export type Plan = 'free' | 'pro';
+
+export type SubscriptionStatus =
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'cancelled'
+  | 'expired'
+  | 'pending';
+
+export type Feature =
+  | 'detect'
+  | 'deepfake_analysis'
+  | 'audio_analysis'
+  | 'visual_analysis'
+  | 'lip_sync_analysis'
+  | 'temporal_analysis'
+  | 'evidence'
+  | 'verification'
+  | 'media_dna'
+  | 'watermark'
+  | 'c2pa'
+  | 'protection_certificate'
+  | 'monitoring'
+  | 'derivative_matching'
+  | 'alerts'
+  | 'incidents'
+  | 'advanced_reports';
+
+export interface SubscriptionInfo {
+  plan: Plan;
+  name: string;
+  status: SubscriptionStatus;
+  price_inr: number;
+  billing_period: string | null;
+  started_at?: string | null;
+  expires_at?: string | null;
+  provider?: string | null;
+}
+
+export interface UsageInfo {
+  analyses: number;
+  analysis_limit: number;
+  analyses_remaining: number;
+  protected_assets: number;
+  monitoring_sources: number;
+  incidents: number;
+}
+
+export interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+  organization?: string;
+  role: string;
+  created_at?: string;
+  avatar_url?: string;
+}
+
+export interface UserProfile {
+  user: UserSummary;
+  subscription: SubscriptionInfo;
+  usage: UsageInfo;
+  features: Record<string, boolean>;
+}
+
+export interface NotificationPreferences {
+  email_alerts: boolean;
+  push_alerts: boolean;
+  detection_alerts: boolean;
+  incident_alerts: boolean;
+}
+
 export type AuthenticityVerdict = 
   | 'Likely authentic' 
   | 'Potentially synthetic' 

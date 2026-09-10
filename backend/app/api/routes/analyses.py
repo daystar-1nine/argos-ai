@@ -40,6 +40,10 @@ def initiate_analysis(
     """
     asset = verify_asset_ownership(req.asset_id, current_user, db)
 
+    # Check and enforce subscription quotas
+    from app.services.subscription_service import subscription_service
+    subscription_service.check_and_increment_usage(current_user, "analyses_count", db)
+
     analysis_id = f"anl_{generate_uuid()[:10]}"
     analysis = Analysis(
         id=analysis_id,

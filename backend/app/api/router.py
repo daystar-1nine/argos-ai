@@ -14,6 +14,11 @@ from app.api.routes.reports import router as reports_router
 from app.api.routes.detections import router as detections_router
 from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.verification import router as verification_router
+from app.api.routes.profile import router as profile_router
+from app.api.routes.subscription import router as subscription_router
+from app.api.routes.usage import router as usage_router
+from app.api.routes.notifications import router as notifications_router
+from app.api.routes.protection import router as protection_router
 
 # Existing Application Routers
 from app.api.v1.authenticity import router as authenticity_router
@@ -34,6 +39,11 @@ api_router.include_router(reports_router)
 api_router.include_router(detections_router)
 api_router.include_router(monitoring_router)
 api_router.include_router(verification_router)
+api_router.include_router(profile_router)
+api_router.include_router(subscription_router)
+api_router.include_router(usage_router)
+api_router.include_router(notifications_router)
+api_router.include_router(protection_router)
 
 # Compatibility Routers
 api_router.include_router(authenticity_router)

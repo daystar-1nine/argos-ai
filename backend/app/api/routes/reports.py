@@ -16,13 +16,15 @@ from app.db.models.report import Report
 from app.schemas.report import ReportResponse
 from app.services.report_service import report_service
 
+from app.services.subscription_service import require_feature
+
 router = APIRouter(prefix="/reports", tags=["Forensic Reports & Dossiers"])
 
 
 @router.post("/{analysis_id}", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 def generate_forensic_report(
     analysis_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_feature("advanced_reports")),
     db: Session = Depends(get_db),
 ):
     """

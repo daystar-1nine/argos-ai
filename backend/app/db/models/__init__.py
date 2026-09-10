@@ -12,6 +12,13 @@ from app.db.models.incident import Incident
 from app.db.models.alert import Alert
 from app.db.models.report import Report
 from app.db.models.monitoring import MonitoringSource
+from app.db.models.subscription import (
+    Plan,
+    Subscription,
+    UsageRecord,
+    NotificationPreference,
+    AuditLog,
+)
 
 __all__ = [
     "Base",
@@ -26,4 +33,9 @@ __all__ = [
     "Alert",
     "Report",
     "MonitoringSource",
+    "Plan",
+    "Subscription",
+    "UsageRecord",
+    "NotificationPreference",
+    "AuditLog",
 ]

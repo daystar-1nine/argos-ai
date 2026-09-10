@@ -17,11 +17,19 @@ import {
   ExternalLink,
   Activity,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Lock,
+  Eye,
+  Scale
 } from 'lucide-react';
 import { DEMO_MATCHES, DEMO_ASSET, DEMO_ALERTS } from '@/lib/data';
+import { useProfile } from '@/lib/useProfile';
 
 export default function DashboardPage() {
+  const { profile } = useProfile();
+  const isPro = profile?.subscription.plan === 'pro';
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
       {/* Sidebar Navigation */}
@@ -33,93 +41,189 @@ export default function DashboardPage() {
 
         <div className="p-6 lg:p-8 space-y-8 flex-1 max-w-[1440px] w-full mx-auto">
           
-          {/* Welcome Greeting Banner */}
+          {/* Welcome Greeting Banner with Dynamic Plan & Usage */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-[3px] border-[#111111]">
             <div>
-              <div className="text-xs font-black text-[#844469] uppercase tracking-wider mb-1">
-                SOVEREIGN DEFENSE WORKBENCH // OPERATOR NODE 01
+              <div className="text-xs font-black text-[#844469] uppercase tracking-wider mb-1 flex items-center gap-2">
+                <span>SOVEREIGN DEFENSE WORKBENCH // OPERATOR NODE 01</span>
+                <span className={`px-2 py-0.2 text-[9px] font-black uppercase border-[1.5px] border-[#111111] ${
+                  isPro ? 'bg-[#F4CD3F] text-[#111111]' : 'bg-[#EFD99C] text-gray-800'
+                }`}>
+                  {isPro ? 'ARGOS PRO' : 'ARGOS FREE'}
+                </span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black uppercase font-display tracking-tight">
-                Good morning, Creator.
+                Good morning, {profile?.user.name || 'Creator'}.
               </h1>
               <p className="text-xs text-gray-700 mt-1">
-                Argos is monitoring 5 supported public, indexed and integrated sources for your registered media.
+                {isPro 
+                  ? `Argos is actively monitoring ${profile?.usage.monitoring_sources || 0} supported public, indexed and integrated sources for your registered media.`
+                  : `You are on the ARGOS FREE tier for AI detection. Usage: ${profile?.usage.analyses || 0} / ${profile?.usage.analysis_limit || 10} analyses this month.`}
               </p>
             </div>
 
-            <Link
-              href="/protect"
-              className="px-5 py-3 bg-[#F4CD3F] hover:bg-[#ffe066] text-[#111111] border-[2.5px] border-[#111111] brutal-btn font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 self-start sm:self-auto"
-            >
-              <Plus className="w-4 h-4" />
-              PROTECT NEW MEDIA
-            </Link>
+            <div className="flex items-center gap-3">
+              {!isPro && (
+                <Link
+                  href="/pricing"
+                  className="px-4 py-3 bg-[#F4CD3F] hover:bg-[#ffe066] text-[#111111] border-[2.5px] border-[#111111] brutal-btn font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-[2px_2px_0px_#111111]"
+                >
+                  <Sparkles className="w-4 h-4 text-[#844469]" />
+                  <span>UPGRADE TO PRO</span>
+                </Link>
+              )}
+              <Link
+                href={isPro ? "/protect" : "/detections"}
+                className="px-5 py-3 bg-[#111111] hover:bg-black text-[#F4CD3F] border-[2.5px] border-[#111111] brutal-btn font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 self-start sm:self-auto"
+              >
+                {isPro ? <Plus className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <span>{isPro ? "PROTECT NEW MEDIA" : "RUN ML DETECTION"}</span>
+              </Link>
+            </div>
           </div>
 
-          {/* The 4 KPI Stats: Protected Media, Active Monitoring, Potential Matches, High-Risk Alerts */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            
-            {/* 1. Protected Media */}
-            <div className="bg-[#EFD99C] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
-                <span>Protected Media</span>
-                <Film className="w-4 h-4 text-[#844469]" />
+          {/* The 4 KPI Stats: Responsive to Free vs Pro */}
+          {isPro ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* 1. Protected Media */}
+              <div className="bg-[#EFD99C] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
+                  <span>Protected Media</span>
+                  <Film className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-4xl font-black font-display text-[#111111]">
+                    {profile?.usage.protected_assets ?? 0}
+                  </span>
+                  <span className="text-xs font-bold text-gray-600 ml-1">masters</span>
+                </div>
+                <div className="text-[10px] text-[#8BCF9B] font-bold flex items-center gap-1">
+                  ✓ MEDIA DNA REGISTERED
+                </div>
               </div>
-              <div className="my-3">
-                <span className="text-4xl font-black font-display text-[#111111]">3</span>
-                <span className="text-xs font-bold text-gray-600 ml-1">masters</span>
+
+              {/* 2. Active Monitoring */}
+              <div className="bg-[#F6C6D8] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
+                  <span>Active Monitoring</span>
+                  <Globe className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-4xl font-black font-display text-[#111111]">
+                    {profile?.usage.monitoring_sources ?? 0}
+                  </span>
+                  <span className="text-xs font-bold text-gray-600 ml-1">sources</span>
+                </div>
+                <div className="text-[10px] text-[#844469] font-bold flex items-center gap-1">
+                  ● PUBLIC / INDEXED SOURCES
+                </div>
               </div>
-              <div className="text-[10px] text-[#8BCF9B] font-bold flex items-center gap-1">
-                ✓ ALL MEDIA DNA REGISTERED
+
+              {/* 3. Potential Matches */}
+              <div className="bg-[#EFD99C] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
+                  <span>Potential Matches</span>
+                  <Activity className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-4xl font-black font-display text-[#844469]">6</span>
+                  <span className="text-xs font-bold text-gray-600 ml-1">derivatives</span>
+                </div>
+                <div className="text-[10px] text-[#844469] font-bold">
+                  ACROSS 3 PLATFORMS
+                </div>
+              </div>
+
+              {/* 4. High-Risk Alerts / Incidents */}
+              <div className="bg-[#D95D5D] text-white border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-white/90">
+                  <span>Active Incidents</span>
+                  <Scale className="w-4 h-4 text-white" />
+                </div>
+                <div className="my-3">
+                  <span className="text-4xl font-black font-display text-white">
+                    {profile?.usage.incidents ?? 0}
+                  </span>
+                  <span className="text-xs font-bold text-white/80 ml-1">open cases</span>
+                </div>
+                <div className="text-[10px] font-bold bg-black/40 px-2 py-0.5 inline-block">
+                  TAKEDOWNS ACTIVE
+                </div>
               </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* 1. Free Analysis Usage */}
+              <div className="bg-[#EFD99C] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
+                  <span>Detection Quota</span>
+                  <Eye className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-4xl font-black font-display text-[#111111]">
+                    {profile?.usage.analyses ?? 0}
+                  </span>
+                  <span className="text-sm font-bold text-gray-700 ml-1">
+                    / {profile?.usage.analysis_limit ?? 10}
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#844469] font-bold">
+                  {profile?.usage.analyses_remaining ?? 10} ANALYSES REMAINING
+                </div>
+              </div>
 
-            {/* 2. Active Monitoring */}
-            <div className="bg-[#F6C6D8] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
-                <span>Active Monitoring</span>
-                <Globe className="w-4 h-4 text-[#844469]" />
+              {/* 2. Protection Locked */}
+              <div className="bg-white border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between opacity-90">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-600">
+                  <span>Media Protection</span>
+                  <Lock className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-2xl font-black font-display text-gray-800">🔒 PRO</span>
+                </div>
+                <Link
+                  href="/pricing"
+                  className="text-[10px] font-black text-[#844469] hover:underline uppercase"
+                >
+                  UPGRADE FOR MEDIA DNA →
+                </Link>
               </div>
-              <div className="my-3">
-                <span className="text-4xl font-black font-display text-[#111111]">5</span>
-                <span className="text-xs font-bold text-gray-600 ml-1">sources</span>
+
+              {/* 3. Monitoring Locked */}
+              <div className="bg-white border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between opacity-90">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-600">
+                  <span>Active Monitoring</span>
+                  <Lock className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-2xl font-black font-display text-gray-800">🔒 PRO</span>
+                </div>
+                <Link
+                  href="/pricing"
+                  className="text-[10px] font-black text-[#844469] hover:underline uppercase"
+                >
+                  UPGRADE FOR TELEMETRY →
+                </Link>
               </div>
-              <div className="text-[10px] text-[#844469] font-bold flex items-center gap-1">
-                ● 5 REGIONS ACTIVE
+
+              {/* 4. Incidents Locked */}
+              <div className="bg-white border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between opacity-90">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-600">
+                  <span>Incident Response</span>
+                  <Lock className="w-4 h-4 text-[#844469]" />
+                </div>
+                <div className="my-3">
+                  <span className="text-2xl font-black font-display text-gray-800">🔒 PRO</span>
+                </div>
+                <Link
+                  href="/pricing"
+                  className="text-[10px] font-black text-[#844469] hover:underline uppercase"
+                >
+                  UPGRADE FOR TAKEDOWNS →
+                </Link>
               </div>
             </div>
-
-            {/* 3. Potential Matches */}
-            <div className="bg-[#EFD99C] border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-700">
-                <span>Potential Matches</span>
-                <Activity className="w-4 h-4 text-[#844469]" />
-              </div>
-              <div className="my-3">
-                <span className="text-4xl font-black font-display text-[#844469]">6</span>
-                <span className="text-xs font-bold text-gray-600 ml-1">derivatives</span>
-              </div>
-              <div className="text-[10px] text-[#844469] font-bold">
-                ACROSS 3 PLATFORMS
-              </div>
-            </div>
-
-            {/* 4. High-Risk Alerts */}
-            <div className="bg-[#D95D5D] text-white border-[3px] border-[#111111] p-5 brutal-shadow flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-bold uppercase text-white/90">
-                <span>High-Risk Alerts</span>
-                <AlertTriangle className="w-4 h-4 text-white" />
-              </div>
-              <div className="my-3">
-                <span className="text-4xl font-black font-display text-white">2</span>
-                <span className="text-xs font-bold text-white/80 ml-1">critical</span>
-              </div>
-              <div className="text-[10px] font-bold bg-black/40 px-2 py-0.5 inline-block">
-                CASE #ARG-8291
-              </div>
-            </div>
-
-          </div>
+          )}
 
           {/* Large Cards: Threat Timeline & Recent Detections */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

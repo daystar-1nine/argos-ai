@@ -5,7 +5,7 @@ Defines environment variables, path resolutions, model settings, and security co
 
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -90,6 +90,15 @@ class Settings(BaseSettings):
     SYNC_THRESHOLD: float = 0.55
     HIGH_RISK_SYNC_THRESHOLD: float = 0.38
     ANALYSIS_TIMEOUT_SEC: int = 600
+
+    # Subscription & Quotas
+    FREE_ANALYSIS_LIMIT: int = Field(default=10, env="FREE_ANALYSIS_LIMIT")
+    PRO_ANALYSIS_LIMIT: int = Field(default=1000, env="PRO_ANALYSIS_LIMIT")
+    FREE_MAX_VIDEO_DURATION_SEC: float = Field(default=60.0, env="FREE_MAX_VIDEO_DURATION_SEC")
+    PRO_MAX_VIDEO_DURATION_SEC: float = Field(default=600.0, env="PRO_MAX_VIDEO_DURATION_SEC")
+    RAZORPAY_KEY_ID: Optional[str] = Field(default=None, env="RAZORPAY_KEY_ID")
+    RAZORPAY_KEY_SECRET: Optional[str] = Field(default=None, env="RAZORPAY_KEY_SECRET")
+    STRIPE_API_KEY: Optional[str] = Field(default=None, env="STRIPE_API_KEY")
 
     # CORS
     CORS_ORIGINS: List[str] = [

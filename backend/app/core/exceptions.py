@@ -75,6 +75,36 @@ class ModelUnavailableException(ArgosException):
         )
 
 
+class ProFeatureRequiredException(ArgosException):
+    def __init__(self, feature: str = "This feature"):
+        super().__init__(
+            message="This feature requires ARGOS PRO.",
+            code="PRO_FEATURE_REQUIRED",
+            status_code=status.HTTP_403_FORBIDDEN,
+            details={"feature": feature, "plan_required": "pro", "price_inr": 199}
+        )
+
+
+class UsageLimitExceededException(ArgosException):
+    def __init__(self, metric: str, limit: int):
+        super().__init__(
+            message=f"Usage limit of {limit} for {metric} exceeded. Please upgrade to ARGOS PRO for higher capacity.",
+            code="USAGE_LIMIT_EXCEEDED",
+            status_code=status.HTTP_403_FORBIDDEN,
+            details={"metric": metric, "limit": limit}
+        )
+
+
+class PaymentProviderNotConfiguredException(ArgosException):
+    def __init__(self, message: str = "Payment provider is not configured."):
+        super().__init__(
+            message=message,
+            code="PAYMENT_PROVIDER_NOT_CONFIGURED",
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            details={"provider": "razorpay_or_stripe"}
+        )
+
+
 def format_error_response(code: str, message: str, details: Dict[str, Any] = None) -> Dict[str, Any]:
     return {
         "error": {

@@ -28,8 +28,13 @@ import {
   TelemetryRegion 
 } from '@/lib/monitoringData';
 import { DetectedMatch } from '@/lib/types';
+import ProFeatureGate from '@/components/ui/ProFeatureGate';
+import { useProfile } from '@/lib/useProfile';
 
 export default function MonitorPage() {
+  const { profile, isLoading } = useProfile();
+  const isPro = profile?.subscription.plan === 'pro';
+
   const [selectedRegion, setSelectedRegion] = useState<string>('All');
   const [highlightedCardId, setHighlightedCardId] = useState<string | null>('match_01');
 
@@ -75,6 +80,21 @@ export default function MonitorPage() {
         <DashboardHeader title="Argos Global Watch" />
 
         <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 flex-1 max-w-[1440px] w-full mx-auto">
+          {!isLoading && !isPro ? (
+            <ProFeatureGate
+              featureTitle="ARGOS GLOBAL WATCH & SENSOR GRID LOCKED"
+              featureDescription="Continuous telemetry monitoring across supported public, indexed and integrated sources requires an active ARGOS PRO subscription. Upgrade to monitor your registered media for derivatives and deepfakes across 5 regional sensor clusters."
+              bullets={[
+                "3D WebGL Cesium / Three.js Sovereign Global Watch Telemetry",
+                "Automated Audio-Visual Derivative Matching via Media DNA",
+                "Continuous Polling on Supported Public, Indexed & Integrated Relays",
+                "Real-Time Incident Notifications & Platform Mirroring",
+                "Instant High-Risk Tamper Heat Anomaly Detection",
+                "Automated Platform Takedown Package Assembly"
+              ]}
+            />
+          ) : (
+            <>
           
           <PageHeader
             badge="TELEMETRY SENSOR GRID"
@@ -335,6 +355,8 @@ export default function MonitorPage() {
               </tbody>
             </table>
           </div>
+          </>
+          )}
 
         </div>
       </div>

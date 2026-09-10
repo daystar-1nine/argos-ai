@@ -1,9 +1,11 @@
 import hashlib
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.models.schemas import MediaDNA
 from app.core.mock_data import SAMPLE_DNA, DEMO_ASSET_ID
+from app.services.subscription_service import require_feature
+from app.db.models.user import User
 
 router = APIRouter(prefix="/dna", tags=["Media DNA"])
 
@@ -29,8 +31,11 @@ def get_media_dna(asset_id: str):
     )
 
 @router.post("/generate", response_model=MediaDNA)
-def generate_media_dna(payload: dict):
-    """Generate Media DNA for a newly uploaded asset."""
+def generate_media_dna(
+    payload: dict,
+    current_user: User = Depends(require_feature("media_dna")),
+):
+    """Generate Media DNA for a newly uploaded asset. Requires ARGOS PRO."""
     asset_id = payload.get("asset_id", f"ARG-2026-{uuid.uuid4().hex[:6].upper()}")
     salt = payload.get("salt", "argos_v1")
     full_hash = hashlib.sha256(f"{asset_id}_{salt}".encode()).hexdigest()

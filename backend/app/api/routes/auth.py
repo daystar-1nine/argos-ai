@@ -38,6 +38,11 @@ def register_user(req: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
+    # Initialize Free subscription and notification preferences for new user
+    from app.services.subscription_service import subscription_service
+    subscription_service.get_or_create_subscription(user, db)
+    subscription_service.get_or_create_notification_preferences(user, db)
+
     token = create_access_token({"sub": user.id, "email": user.email, "role": user.role})
     return TokenResponse(access_token=token, token_type="bearer", user=user)
 

@@ -19,11 +19,15 @@ import {
   Settings, 
   HelpCircle,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  User,
+  Sparkles
 } from 'lucide-react';
+import { useProfile } from '@/lib/useProfile';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { profile } = useProfile();
 
   const mainLinks = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -40,6 +44,8 @@ export default function Sidebar() {
   ];
 
   const bottomLinks = [
+    { href: '/profile', label: 'My Profile', icon: User },
+    { href: '/pricing', label: 'Plans & Pricing', icon: Sparkles },
     { href: '/settings', label: 'Settings', icon: Settings },
     { href: '/help', label: 'Help & Docs', icon: HelpCircle },
   ];
@@ -115,6 +121,37 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* Operator Profile Badge */}
+        <Link
+          href="/profile"
+          className="p-2.5 bg-white hover:bg-[#F6C6D8] border-[2px] border-[#111111] block transition-all shadow-[2px_2px_0px_#111111] group"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full border-[1.5px] border-[#111111] bg-[#EFD99C] overflow-hidden shrink-0">
+              <img
+                src={profile?.user.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=argos'}
+                alt="Operator Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-black truncate text-[#111111] group-hover:text-[#844469]">
+                {profile?.user.name || 'Lead Operator'}
+              </div>
+              <div className="flex items-center justify-between gap-1 mt-0.5">
+                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 border-[1px] border-[#111111] ${
+                  profile?.subscription.plan === 'pro'
+                    ? 'bg-[#F4CD3F] text-[#111111]'
+                    : 'bg-[#EFD99C] text-gray-800'
+                }`}>
+                  {profile?.subscription.plan === 'pro' ? 'ARGOS PRO' : 'ARGOS FREE'}
+                </span>
+                <span className="text-[9px] text-[#8BCF9B] font-bold">ONLINE</span>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         <div className="p-2.5 bg-white border-[2px] border-[#111111] text-[10px]">
           <div className="font-bold text-[#844469]">C2PA SIGNING AGENT</div>

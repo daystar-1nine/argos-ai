@@ -48,12 +48,72 @@ create_database_engine()
 
 
 def init_db():
-    """Initializes schema tables if not yet created."""
-    global engine
+    """Initializes schema tables if not yet created and seeds default plans."""
+    global engine, SessionLocal
     if engine is None:
         create_database_engine()
     Base.metadata.create_all(bind=engine)
     logger.info("[DATABASE] Database schema verified & initialized.")
+
+    # Seed default plans
+    from app.db.models.subscription import Plan, Subscription, NotificationPreference
+    from app.db.models.user import User
+
+    db = SessionLocal()
+    try:
+        free_plan = db.query(Plan).filter(Plan.id == "free").first()
+        if not free_plan:
+            free_plan = Plan(
+                id="free",
+                name="ARGOS FREE",
+                price_inr=0,
+                billing_period=None,
+                is_active=True
+            )
+            db.add(free_plan)
+
+        pro_plan = db.query(Plan).filter(Plan.id == "pro").first()
+        if not pro_plan:
+            pro_plan = Plan(
+                id="pro",
+                name="ARGOS PRO",
+                price_inr=199,
+                billing_period="monthly",
+                is_active=True
+            )
+            db.add(pro_plan)
+        db.commit()
+
+        # Ensure demo/existing users have subscriptions and notification preferences
+        users_without_sub = db.query(User).filter(~User.subscription.has()).all()
+        for u in users_without_sub:
+            # Demo analyst gets PRO for comprehensive demonstration, others get FREE
+            initial_plan = "pro" if u.email == "analyst@argos.ai" else "free"
+            sub = Subscription(
+                user_id=u.id,
+                plan_id=initial_plan,
+                status="active",
+                provider="manual"
+            )
+            db.add(sub)
+
+        users_without_pref = db.query(User).filter(~User.notification_preference.has()).all()
+        for u in users_without_pref:
+            pref = NotificationPreference(
+                user_id=u.id,
+                email_alerts=True,
+                push_alerts=False,
+                detection_alerts=True,
+                incident_alerts=True
+            )
+            db.add(pref)
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.warning(f"[DATABASE] Plan/user seed note: {e}")
+    finally:
+        db.close()
 
 
 def get_db() -> Generator[Session, None, None]:
