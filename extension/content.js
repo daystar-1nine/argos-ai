@@ -77,37 +77,64 @@
     return `${Math.round(num * 100)}%`;
   }
 
-  // Capture audiovisual snippet (approx 2.5 seconds) from video element
+  // Capture audiovisual snippet (approx 2.8 seconds) from video element
   async function captureVideoSnippet(video) {
     return new Promise((resolve, reject) => {
       try {
-        let stream = null;
-
-        if (typeof video.captureStream === "function") {
-          try {
-            stream = video.captureStream();
-          } catch (e) {
-            console.warn("[ARGOS] captureStream failed:", e);
-          }
+        if (!video) {
+          reject(new Error("No active video element found on page."));
+          return;
         }
 
-        // Fallback: draw video frames to canvas
-        if (!stream || stream.getVideoTracks().length === 0) {
-          const canvas = document.createElement("canvas");
-          const width = video.videoWidth || 640;
-          const height = video.videoHeight || 360;
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
+        // Ensure video is playing so frame buffer advances
+        if (video.paused && typeof video.play === "function") {
+          video.play().catch(() => {});
+        }
 
-          const renderInterval = setInterval(() => {
-            try {
+        const width = Math.min(640, video.videoWidth || 640);
+        const height = Math.min(360, video.videoHeight || 360);
+
+        // Render video frames onto HTML5 canvas at 25 FPS
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+
+        const renderInterval = setInterval(() => {
+          try {
+            if (video.readyState >= 2) {
               ctx.drawImage(video, 0, 0, width, height);
-            } catch (e) {}
-          }, 40); // 25 fps
+            }
+          } catch (e) {
+            // Ignore temporary frame render errors
+          }
+        }, 40); // 25 fps
 
-          stream = canvas.captureStream(25);
-          setTimeout(() => clearInterval(renderInterval), 3000);
+        const canvasStream = canvas.captureStream ? canvas.captureStream(25) : null;
+        if (!canvasStream) {
+          clearInterval(renderInterval);
+          reject(new Error("Canvas captureStream is not supported in this browser."));
+          return;
+        }
+
+        let combinedStream = canvasStream;
+
+        // Extract audio track if native captureStream is available
+        if (typeof video.captureStream === "function") {
+          try {
+            const origStream = video.captureStream();
+            if (origStream) {
+              const audioTracks = origStream.getAudioTracks();
+              if (audioTracks && audioTracks.length > 0) {
+                const newStream = new MediaStream();
+                canvasStream.getVideoTracks().forEach((t) => newStream.addTrack(t));
+                audioTracks.forEach((t) => newStream.addTrack(t));
+                combinedStream = newStream;
+              }
+            }
+          } catch (e) {
+            console.warn("[ARGOS] Could not attach native audio track:", e);
+          }
         }
 
         const mimeTypes = [
@@ -119,7 +146,7 @@
 
         let selectedMime = "";
         for (const mime of mimeTypes) {
-          if (MediaRecorder.isTypeSupported(mime)) {
+          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime)) {
             selectedMime = mime;
             break;
           }
@@ -127,9 +154,11 @@
 
         let mediaRecorder;
         try {
-          mediaRecorder = selectedMime ? new MediaRecorder(stream, { mimeType: selectedMime }) : new MediaRecorder(stream);
+          mediaRecorder = selectedMime
+            ? new MediaRecorder(combinedStream, { mimeType: selectedMime })
+            : new MediaRecorder(combinedStream);
         } catch (e) {
-          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder = new MediaRecorder(combinedStream);
         }
 
         const chunks = [];
@@ -140,25 +169,33 @@
         };
 
         mediaRecorder.onstop = () => {
+          clearInterval(renderInterval);
           const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "video/webm" });
-          if (blob.size < 100) {
-            reject(new Error("Captured video stream was empty. Please ensure video is playing."));
+
+          if (blob.size < 500) {
+            reject(new Error("Captured video stream was empty. Please start playing video before scanning."));
             return;
           }
+
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result);
           reader.onerror = (err) => reject(err);
           reader.readAsDataURL(blob);
         };
 
-        mediaRecorder.onerror = (err) => reject(err);
+        mediaRecorder.onerror = (err) => {
+          clearInterval(renderInterval);
+          reject(err);
+        };
 
         mediaRecorder.start(100);
+
+        // Record 2.8s clip to ensure at least 2.5s duration
         setTimeout(() => {
           if (mediaRecorder.state !== "inactive") {
             mediaRecorder.stop();
           }
-        }, 2500);
+        }, 2800);
 
       } catch (err) {
         reject(err);
@@ -215,41 +252,24 @@
     const progressStageText = hud.querySelector(".argos-progress-stage");
 
     try {
-      progressStageText.innerText = "Stage 1/11: Capturing stream...";
+      progressStageText.innerText = "Stage 1/11: Capturing live video stream...";
       progressBar.style.width = "15%";
 
-      let dataUrl = null;
-      let isFallbackSample = false;
+      const dataUrl = await captureVideoSnippet(video);
 
-      try {
-        dataUrl = await captureVideoSnippet(video);
-      } catch (e) {
-        console.warn("[ARGOS] Snippet capture fallback triggered:", e);
-        isFallbackSample = true;
-      }
-
-      progressStageText.innerText = "Stage 2/11: Initiating AI Pipeline...";
+      progressStageText.innerText = "Stage 2/11: Uploading clip to ARGOS AI Engine...";
       progressBar.style.width = "25%";
 
-      const messageType = isFallbackSample ? "START_SAMPLE_ANALYSIS" : "START_CLIP_ANALYSIS";
-      const payload = isFallbackSample
-        ? { type: messageType, sampleType: "authentic" }
-        : { type: messageType, dataUrl: dataUrl, filename: `clip_${Date.now()}.webm` };
+      const payload = {
+        type: "START_CLIP_ANALYSIS",
+        dataUrl: dataUrl,
+        filename: `live_clip_${Date.now()}.webm`
+      };
 
       // Initiate job via background script
       chrome.runtime.sendMessage(payload, (startRes) => {
         if (!startRes || !startRes.ok) {
-          if (!isFallbackSample) {
-            chrome.runtime.sendMessage({ type: "START_SAMPLE_ANALYSIS", sampleType: "authentic" }, (fallbackRes) => {
-              if (!fallbackRes || !fallbackRes.ok) {
-                showError(hud, (fallbackRes && fallbackRes.error) || "Could not connect to ARGOS AI server.");
-                return;
-              }
-              trackJobProgress(hud, fallbackRes.analysisId, video, container);
-            });
-            return;
-          }
-          showError(hud, (startRes && startRes.error) || "Could not connect to ARGOS AI extension background script.");
+          showError(hud, (startRes && startRes.error) || "Could not upload video clip to ARGOS AI backend server.");
           return;
         }
 
@@ -257,7 +277,7 @@
       });
 
     } catch (err) {
-      showError(hud, `Analysis Error: ${err.message || "Failed to analyze video"}`);
+      showError(hud, `Analysis Error: ${err.message || "Failed to capture active video stream"}`);
     }
   }
 

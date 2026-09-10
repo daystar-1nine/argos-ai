@@ -46,10 +46,24 @@ def get_ffmpeg_binary() -> str:
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
+import wave
+import struct
+
+def generate_silent_wav(output_wav_path: str, duration_sec: float, sample_rate: int = AUDIO_SAMPLE_RATE):
+    """Generates a mono 16-bit PCM silent/ambient WAV file matching specified duration."""
+    num_samples = max(int(duration_sec * sample_rate), int(MIN_VIDEO_DURATION_SEC * sample_rate))
+    with wave.open(output_wav_path, "w") as wav_file:
+        wav_file.setnchannels(1)  # Mono
+        wav_file.setsampwidth(2)  # 16-bit
+        wav_file.setframerate(sample_rate)
+        zero_samples = struct.pack(f"<{num_samples}h", *([0] * num_samples))
+        wav_file.writeframes(zero_samples)
+
+
 def extract_audio_track(video_path: str, output_wav_path: Optional[str] = None) -> str:
     """
     Extracts audio track from video file and converts to 16kHz mono PCM 16-bit WAV.
-    Raises MissingAudioError if no audio stream exists.
+    Falls back to generating silent ambient audio if input clip lacks audio stream.
     """
     video_path_obj = Path(video_path)
     if not video_path_obj.exists():
@@ -73,12 +87,15 @@ def extract_audio_track(video_path: str, output_wav_path: Optional[str] = None) 
 
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    # Check if audio was present
+    # Check if audio was present or extracted properly
     if not Path(output_wav_path).exists() or os.path.getsize(output_wav_path) < 100:
-        # Check stderr for missing audio stream indication
-        if "does not contain any stream" in result.stderr or "Output file is empty" in result.stderr:
-            raise MissingAudioError("Input video contains no audible audio track. Multimodal lip-sync analysis requires audio.")
-        raise MissingAudioError(f"Failed to extract audio track: {result.stderr[-300:] if result.stderr else 'Empty audio stream'}")
+        # Fallback: synthesize silent WAV matching video duration
+        try:
+            meta = get_video_metadata(video_path)
+            duration_sec = meta.get("duration_sec", 2.5)
+        except Exception:
+            duration_sec = 2.5
+        generate_silent_wav(output_wav_path, duration_sec, AUDIO_SAMPLE_RATE)
 
     return output_wav_path
 
@@ -86,6 +103,7 @@ def extract_audio_track(video_path: str, output_wav_path: Optional[str] = None) 
 def get_video_metadata(video_path: str) -> Dict[str, Any]:
     """
     Inspects video stream with OpenCV VideoCapture and validates integrity.
+    Includes manual frame count fallback for browser MediaRecorder WebM streams.
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -98,6 +116,22 @@ def get_video_metadata(video_path: str) -> Dict[str, Any]:
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Manual frame count fallback for browser MediaRecorder WebM streams
+    if total_frames <= 0:
+        count = 0
+        while True:
+            ret, _ = cap.read()
+            if not ret:
+                break
+            count += 1
+        total_frames = count
+        cap.release()
+        cap = cv2.VideoCapture(video_path)
+        if width <= 0 or height <= 0:
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     duration_sec = total_frames / fps if fps > 0 else 0.0
 
     cap.release()
@@ -107,6 +141,9 @@ def get_video_metadata(video_path: str) -> Dict[str, Any]:
 
     if duration_sec < MIN_VIDEO_DURATION_SEC:
         raise VideoDurationError(f"Video is too short ({duration_sec:.2f}s). Minimum required duration is {MIN_VIDEO_DURATION_SEC}s.")
+
+    if duration_sec > MAX_VIDEO_DURATION_SEC:
+        raise VideoDurationError(f"Video exceeds maximum permitted duration of {MAX_VIDEO_DURATION_SEC}s ({duration_sec:.1f}s).")
 
     if duration_sec > MAX_VIDEO_DURATION_SEC:
         raise VideoDurationError(f"Video exceeds maximum permitted duration of {MAX_VIDEO_DURATION_SEC}s ({duration_sec:.1f}s).")
