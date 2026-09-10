@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono, Silkscreen } from "next/font/google";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -51,9 +52,12 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${silkscreen.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-[#F8E8E8] text-[#111111] selection:bg-[#F4CD3F]">
-        <LoadingScreen />
-        {children}
+        <AuthProvider>
+          <LoadingScreen />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

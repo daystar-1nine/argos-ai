@@ -48,21 +48,51 @@ class MediaValidationException(ArgosException):
 
 
 class AuthenticationException(ArgosException):
-    def __init__(self, message: str = "Invalid authentication credentials"):
+    def __init__(self, message: str = "Authentication is required."):
         super().__init__(
             message=message,
-            code="UNAUTHENTICATED",
+            code="AUTHENTICATION_REQUIRED",
             status_code=status.HTTP_401_UNAUTHORIZED
         )
 
 
 class AuthorizationException(ArgosException):
-    def __init__(self, message: str = "You do not have permission to access this resource"):
+    def __init__(self, message: str = "You do not have permission to access this resource."):
         super().__init__(
             message=message,
             code="FORBIDDEN",
             status_code=status.HTTP_403_FORBIDDEN
         )
+
+
+class EmailProviderNotConfiguredException(ArgosException):
+    def __init__(self, message: str = "Email delivery service is not configured (SMTP settings missing)."):
+        super().__init__(
+            message=message,
+            code="EMAIL_PROVIDER_NOT_CONFIGURED",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            details={"provider": "smtp"}
+        )
+
+
+class RateLimitExceededException(ArgosException):
+    def __init__(self, message: str = "Too many requests. Please wait before retrying.", wait_seconds: int = 300):
+        super().__init__(
+            message=message,
+            code="RATE_LIMIT_EXCEEDED",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            details={"retry_after_seconds": wait_seconds}
+        )
+
+
+class InvalidTokenException(ArgosException):
+    def __init__(self, message: str = "The provided token is invalid, expired, or has already been used."):
+        super().__init__(
+            message=message,
+            code="INVALID_OR_EXPIRED_TOKEN",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
 
 
 class ModelUnavailableException(ArgosException):

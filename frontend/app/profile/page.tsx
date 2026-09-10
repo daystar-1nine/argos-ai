@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+
 import Sidebar from '@/components/navigation/Sidebar';
 import DashboardHeader from '@/components/navigation/DashboardHeader';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/lib/useProfile';
 import { 
   User, 
@@ -22,11 +25,16 @@ import {
   ArrowRight,
   RefreshCw,
   Lock,
-  Save
+  Save,
+  Laptop,
+  Trash2,
+  LogOut
 } from 'lucide-react';
 
 export default function ProfilePage() {
   const { profile, isLoading, refetch, updateProfile, changePassword, updateNotifications } = useProfile();
+  const { logoutAll } = useAuth();
+
 
   // Form states
   const [activeTab, setActiveTab] = useState<'account' | 'plan' | 'usage' | 'security' | 'notifications'>('account');
@@ -42,6 +50,60 @@ export default function ProfilePage() {
   const [securityMsg, setSecurityMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Active Sessions
+  const [sessions, setSessions] = useState<Array<{ id: string; device: string; ip_hash?: string; created_at: string; last_used_at: string; is_current: boolean }>>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  const fetchSessions = async () => {
+    try {
+      setIsLoadingSessions(true);
+      const res = await fetch('/api/auth/sessions');
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data);
+      }
+    } catch (e) {
+      console.warn('Failed to load active sessions:', e);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'security') {
+      fetchSessions();
+    }
+  }, [activeTab]);
+
+  const handleRevokeSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/auth/sessions/${sessionId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSecurityMsg({ type: 'success', text: `Session ${sessionId} successfully revoked.` });
+        await fetchSessions();
+      } else {
+        const err = await res.json();
+        setSecurityMsg({ type: 'error', text: err.error?.message || 'Failed to revoke session.' });
+      }
+    } catch {
+      setSecurityMsg({ type: 'error', text: 'Error revoking session.' });
+    }
+  };
+
+  const handleTerminateOtherSessions = async () => {
+    try {
+      // Revoke all other sessions by filtering non-current
+      const nonCurrent = sessions.filter(s => !s.is_current);
+      for (const s of nonCurrent) {
+        await fetch(`/api/auth/sessions/${s.id}`, { method: 'DELETE' });
+      }
+      setSecurityMsg({ type: 'success', text: 'All other active sessions have been terminated.' });
+      await fetchSessions();
+    } catch {
+      setSecurityMsg({ type: 'error', text: 'Error terminating other sessions.' });
+    }
+  };
+
   // Notifications State
   const [notifState, setNotifState] = useState({
     email_alerts: true,
@@ -50,6 +112,7 @@ export default function ProfilePage() {
     incident_alerts: true,
   });
   const [notifMsg, setNotifMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
 
   // Sync inputs on profile load
   React.useEffect(() => {
@@ -113,8 +176,10 @@ export default function ProfilePage() {
   const isPro = profile?.subscription.plan === 'pro';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
-      <Sidebar />
+    <AuthGuard>
+      <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
+        <Sidebar />
+
 
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader title="Operator Profile & Subscription" />
@@ -520,23 +585,74 @@ export default function ProfilePage() {
               </form>
 
               {/* Security Telemetry */}
-              <div className="pt-4 border-t-[2px] border-[#111111] space-y-3">
-                <div className="text-xs font-black uppercase text-gray-700">ACTIVE SESSION TELEMETRY</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-[#F8E8E8] border-[1.5px] border-[#111111]">
-                    <div className="font-bold text-gray-600">TOKEN AUTHENTICATION</div>
-                    <div className="font-black text-black">JWT Bearer HS256 Signed</div>
-                    <div className="text-[10px] text-[#8BCF9B] font-bold mt-1">● ACTIVE SESSION SECURED</div>
+              <div className="pt-4 border-t-[2px] border-[#111111] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-black uppercase text-[#111111]">ACTIVE SESSIONS MATRIX</div>
+                    <div className="text-[11px] text-gray-600">Track and terminate active cryptographic operator sessions.</div>
                   </div>
-                  <div className="p-3 bg-gray-100 border-[1.5px] border-[#111111]">
-                    <div className="font-bold text-gray-600">TWO-FACTOR AUTHENTICATION</div>
-                    <div className="font-black text-gray-800">Hardware FIDO2 / TOTP (Enterprise Roadmap)</div>
-                    <div className="text-[10px] text-gray-500 mt-1">Status: Unconfigured</div>
-                  </div>
+                  {sessions.filter(s => !s.is_current).length > 0 && (
+                    <button
+                      onClick={handleTerminateOtherSessions}
+                      className="px-3 py-1.5 bg-[#F6C6D8] hover:bg-[#ffb3cc] text-[#D95D5D] border-[2px] border-[#111111] font-mono text-xs font-black uppercase flex items-center gap-1.5 transition-all"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      TERMINATE OTHER SESSIONS
+                    </button>
+                  )}
                 </div>
+
+                {isLoadingSessions ? (
+                  <div className="p-4 bg-[#F8E8E8] border-[1.5px] border-[#111111] text-xs font-bold text-center">
+                    QUERYING ACTIVE SESSION REGISTRY...
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="p-4 bg-[#F8E8E8] border-[1.5px] border-[#111111] text-xs text-gray-600 font-bold">
+                    No other active sessions detected.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map((s) => (
+                      <div
+                        key={s.id}
+                        className="p-3 bg-[#F8E8E8] border-[2px] border-[#111111] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white border-[1.5px] border-[#111111] shrink-0">
+                            <Laptop className="w-4 h-4 text-[#844469]" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#111111] flex items-center gap-2">
+                              <span>{s.device || 'Authorized Workstation'}</span>
+                              {s.is_current && (
+                                <span className="px-1.5 py-0.2 bg-[#8BCF9B] text-green-950 font-black text-[9px] border border-[#111111]">
+                                  CURRENT SESSION
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-gray-600 font-mono mt-0.5">
+                              IP Hash: {s.ip_hash || 'Protected'} • Last used: {new Date(s.last_used_at).toLocaleDateString()} {new Date(s.last_used_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {!s.is_current && (
+                          <button
+                            onClick={() => handleRevokeSession(s.id)}
+                            className="px-2.5 py-1 bg-white hover:bg-[#D95D5D] hover:text-white border-[1.5px] border-[#111111] text-[10px] font-black uppercase transition-all flex items-center gap-1 shrink-0"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            REVOKE
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
+
 
           {/* TAB 5: NOTIFICATIONS */}
           {activeTab === 'notifications' && (
@@ -625,5 +741,7 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }
+

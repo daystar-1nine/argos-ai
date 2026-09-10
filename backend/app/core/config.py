@@ -34,7 +34,25 @@ class Settings(BaseSettings):
         env="JWT_SECRET"
     )
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days for development ease
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours access token
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30 days refresh session
+
+    # Cookies
+    COOKIE_DOMAIN: Optional[str] = Field(default=None, env="COOKIE_DOMAIN")
+    COOKIE_SECURE: bool = Field(default=False, env="COOKIE_SECURE")
+    COOKIE_SAMESITE: str = Field(default="lax", env="COOKIE_SAMESITE")
+
+    # Rate Limiting & Throttling
+    LOGIN_RATE_LIMIT_ATTEMPTS: int = Field(default=5, env="LOGIN_RATE_LIMIT_ATTEMPTS")
+    LOGIN_RATE_LIMIT_WINDOW_SEC: int = Field(default=300, env="LOGIN_RATE_LIMIT_WINDOW_SEC")  # 5 minutes
+
+    # SMTP / Email Provider
+    SMTP_HOST: Optional[str] = Field(default=None, env="SMTP_HOST")
+    SMTP_PORT: int = Field(default=587, env="SMTP_PORT")
+    SMTP_USERNAME: Optional[str] = Field(default=None, env="SMTP_USERNAME")
+    SMTP_PASSWORD: Optional[str] = Field(default=None, env="SMTP_PASSWORD")
+    EMAIL_FROM: str = Field(default="security@argos.ai", env="EMAIL_FROM")
+
 
     # Database
     DATABASE_URL: str = Field(

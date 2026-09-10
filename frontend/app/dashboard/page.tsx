@@ -25,15 +25,18 @@ import {
 } from 'lucide-react';
 import { DEMO_MATCHES, DEMO_ASSET, DEMO_ALERTS } from '@/lib/data';
 import { useProfile } from '@/lib/useProfile';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 export default function DashboardPage() {
   const { profile } = useProfile();
   const isPro = profile?.subscription.plan === 'pro';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
-      {/* Sidebar Navigation */}
-      <Sidebar />
+    <AuthGuard>
+      <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
+        {/* Sidebar Navigation */}
+        <Sidebar />
+
 
       {/* Main Content Viewport */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -399,5 +402,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }
+

@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.dependencies import get_current_user, verify_asset_ownership
+from app.core.dependencies import get_current_user, verify_asset_ownership, verify_analysis_ownership
 from app.core.exceptions import EntityNotFoundException, ArgosException
 from app.db.base import generate_uuid
 from app.db.session import get_db, SessionLocal
@@ -70,11 +70,13 @@ def initiate_analysis(
 
 
 @router.get("/{analysis_id}", response_model=AnalysisStatusResponse)
-def get_analysis_status(analysis_id: str, db: Session = Depends(get_db)):
+def get_analysis_status(
+    analysis_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """GET /api/analyses/{analysis_id} — Returns current execution stage, progress percentage, or error."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-    if not analysis:
-        raise EntityNotFoundException("Analysis", analysis_id)
+    analysis = verify_analysis_ownership(analysis_id, current_user, db)
 
     result_payload = None
     if analysis.status == "completed":
@@ -100,11 +102,13 @@ def get_analysis_status(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{analysis_id}/result", response_model=AnalysisResultResponse)
-def get_full_analysis_result(analysis_id: str, db: Session = Depends(get_db)):
+def get_full_analysis_result(
+    analysis_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """GET /api/analyses/{analysis_id}/result — Returns comprehensive forensic findings."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-    if not analysis:
-        raise EntityNotFoundException("Analysis", analysis_id)
+    analysis = verify_analysis_ownership(analysis_id, current_user, db)
 
     if analysis.status != "completed":
         raise ArgosException(
@@ -142,25 +146,30 @@ def get_full_analysis_result(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{analysis_id}/windows", response_model=List[AnalysisWindowResponse])
-def get_analysis_windows(analysis_id: str, db: Session = Depends(get_db)):
+def get_analysis_windows(
+    analysis_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """GET /api/analyses/{analysis_id}/windows — Retrieves evaluated temporal windows."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-    if not analysis:
-        raise EntityNotFoundException("Analysis", analysis_id)
+    analysis = verify_analysis_ownership(analysis_id, current_user, db)
 
     windows = db.query(AnalysisWindow).filter(AnalysisWindow.analysis_id == analysis_id).order_by(AnalysisWindow.window_index).all()
     return windows
 
 
 @router.get("/{analysis_id}/evidence", response_model=List[EvidenceFrameResponse])
-def get_analysis_evidence_frames(analysis_id: str, db: Session = Depends(get_db)):
+def get_analysis_evidence_frames(
+    analysis_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """GET /api/analyses/{analysis_id}/evidence — Retrieves forensic keyframe metadata."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-    if not analysis:
-        raise EntityNotFoundException("Analysis", analysis_id)
+    analysis = verify_analysis_ownership(analysis_id, current_user, db)
 
     frames = db.query(EvidenceFrame).filter(EvidenceFrame.analysis_id == analysis_id).order_by(EvidenceFrame.frame_index).all()
     return frames
+
 
 
 @router.get("/{analysis_id}/evidence/{filename}")

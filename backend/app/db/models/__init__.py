@@ -19,6 +19,7 @@ from app.db.models.subscription import (
     NotificationPreference,
     AuditLog,
 )
+from app.db.models.session import UserSession, PasswordResetToken
 
 __all__ = [
     "Base",
@@ -38,4 +39,7 @@ __all__ = [
     "UsageRecord",
     "NotificationPreference",
     "AuditLog",
+    "UserSession",
+    "PasswordResetToken",
 ]
+

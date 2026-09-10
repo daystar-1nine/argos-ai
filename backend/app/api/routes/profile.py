@@ -101,6 +101,7 @@ def update_user_profile(
     )
 
 
+@router.patch("/password")
 @router.post("/change-password")
 def change_user_password(
     req: PasswordChangeRequest,
@@ -108,15 +109,15 @@ def change_user_password(
     db: Session = Depends(get_db),
 ):
     """
-    POST /api/profile/change-password
+    PATCH /api/profile/password (or POST /api/profile/change-password)
     Validates current password and securely updates with salted bcrypt hash.
     """
     if not verify_password(req.old_password, current_user.hashed_password):
         raise AuthenticationException("Current password is not correct.")
 
-    if len(req.new_password) < 6:
+    if len(req.new_password) < 8:
         raise ArgosException(
-            "New password must be at least 6 characters.",
+            "New password must be at least 8 characters long.",
             code="PASSWORD_TOO_SHORT",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -132,3 +133,4 @@ def change_user_password(
     )
 
     return {"status": "success", "message": "Password updated successfully."}
+

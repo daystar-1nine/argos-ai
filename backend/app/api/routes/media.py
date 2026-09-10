@@ -3,7 +3,7 @@ ARGOS AI - Media Asset Management & Upload Endpoints
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -22,7 +22,21 @@ from app.services.storage_service import storage_service
 router = APIRouter(prefix="/media", tags=["Media Vault & Ingestion"])
 
 
+@router.get("", response_model=List[MediaAssetResponse])
+def list_user_media_assets(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """GET /api/media — Returns all media assets owned by the authenticated user."""
+    if current_user.role in ["admin", "analyst"]:
+        assets = db.query(MediaAsset).order_by(MediaAsset.created_at.desc()).all()
+    else:
+        assets = db.query(MediaAsset).filter(MediaAsset.user_id == current_user.id).order_by(MediaAsset.created_at.desc()).all()
+    return assets
+
+
 @router.post("/upload", response_model=MediaUploadResponse, status_code=status.HTTP_201_CREATED)
+
 def upload_media_asset(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),

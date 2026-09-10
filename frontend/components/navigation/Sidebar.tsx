@@ -23,11 +23,12 @@ import {
   User,
   Sparkles
 } from 'lucide-react';
-import { useProfile } from '@/lib/useProfile';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { profile } = useProfile();
+  const { user, plan, logout } = useAuth();
+
 
   const mainLinks = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -123,35 +124,40 @@ export default function Sidebar() {
         </nav>
 
         {/* Operator Profile Badge */}
-        <Link
-          href="/profile"
-          className="p-2.5 bg-white hover:bg-[#F6C6D8] border-[2px] border-[#111111] block transition-all shadow-[2px_2px_0px_#111111] group"
-        >
+        <div className="p-2.5 bg-white border-[2px] border-[#111111] block shadow-[2px_2px_0px_#111111]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full border-[1.5px] border-[#111111] bg-[#EFD99C] overflow-hidden shrink-0">
+            <Link href="/profile" className="w-8 h-8 rounded-full border-[1.5px] border-[#111111] bg-[#EFD99C] overflow-hidden shrink-0 hover:opacity-80">
               <img
-                src={profile?.user.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=argos'}
+                src={user?.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=argos'}
                 alt="Operator Avatar"
                 className="w-full h-full object-cover"
               />
-            </div>
+            </Link>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black truncate text-[#111111] group-hover:text-[#844469]">
-                {profile?.user.name || 'Lead Operator'}
-              </div>
+              <Link href="/profile" className="text-xs font-black truncate text-[#111111] hover:text-[#844469] block">
+                {user?.name || 'Lead Operator'}
+              </Link>
               <div className="flex items-center justify-between gap-1 mt-0.5">
                 <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 border-[1px] border-[#111111] ${
-                  profile?.subscription.plan === 'pro'
+                  plan === 'pro'
                     ? 'bg-[#F4CD3F] text-[#111111]'
                     : 'bg-[#EFD99C] text-gray-800'
                 }`}>
-                  {profile?.subscription.plan === 'pro' ? 'ARGOS PRO' : 'ARGOS FREE'}
+                  {plan === 'pro' ? 'ARGOS PRO' : 'ARGOS FREE'}
                 </span>
-                <span className="text-[9px] text-[#8BCF9B] font-bold">ONLINE</span>
+                <button
+                  onClick={() => logout()}
+                  title="Sign Out"
+                  className="text-[10px] text-[#D95D5D] font-bold hover:underline flex items-center gap-0.5"
+                >
+                  <LogOut className="w-3 h-3" />
+                  EXIT
+                </button>
               </div>
             </div>
           </div>
-        </Link>
+        </div>
+
 
         <div className="p-2.5 bg-white border-[2px] border-[#111111] text-[10px]">
           <div className="font-bold text-[#844469]">C2PA SIGNING AGENT</div>

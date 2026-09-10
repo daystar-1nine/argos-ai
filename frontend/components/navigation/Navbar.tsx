@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import ArgosLogo from '@/components/branding/ArgosLogo';
-import { Menu, X, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { Menu, X, Shield, Terminal, ArrowRight, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, plan, logout, isLoading } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#F8E8E8] border-b-[3px] border-[#111111]">
@@ -39,7 +41,7 @@ export default function Navbar() {
           </Link>
         </nav>
 
-        {/* RIGHT: Verify, Dashboard, Get Started */}
+        {/* RIGHT: Verify, Dashboard, Get Started / User Pill */}
         <div className="hidden sm:flex items-center gap-3 shrink-0">
           <Link
             href="/verify"
@@ -49,22 +51,71 @@ export default function Navbar() {
             Verify
           </Link>
 
-          <Link
-            href="/dashboard"
-            className="px-3.5 py-2 bg-[#F6C6D8] hover:bg-[#ffb3cc] text-[#111111] border-[2.5px] border-[#111111] brutal-shadow-sm font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            Dashboard
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="px-3.5 py-2 bg-[#F6C6D8] hover:bg-[#ffb3cc] text-[#111111] border-[2.5px] border-[#111111] brutal-shadow-sm font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                Dashboard
+              </Link>
 
-          <Link
-            href="/protect"
-            className="px-4 py-2 bg-[#F4CD3F] hover:bg-[#ffe066] text-[#111111] border-[2.5px] border-[#111111] brutal-btn font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
-          >
-            Get Started
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+              {/* Authenticated User Pill */}
+              <div className="flex items-center gap-2 pl-2 border-l-[2.5px] border-[#111111]">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 p-1.5 bg-white hover:bg-[#EFD99C] border-[2px] border-[#111111] brutal-shadow-sm transition-all"
+                  title="View Profile"
+                >
+                  <div className="w-6 h-6 rounded-full border border-[#111111] overflow-hidden bg-[#EFD99C] shrink-0">
+                    <img
+                      src={user?.avatar_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=argos'}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="font-mono text-xs font-black truncate max-w-[90px] text-[#111111]">
+                    {user?.name || 'Operator'}
+                  </span>
+                  <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 border-[1px] border-[#111111] ${
+                    plan === 'pro' ? 'bg-[#F4CD3F] text-[#111111]' : 'bg-[#EFD99C] text-gray-800'
+                  }`}>
+                    {plan === 'pro' ? 'PRO' : 'FREE'}
+                  </span>
+                </Link>
+
+                <button
+                  onClick={() => logout()}
+                  title="Terminate Session"
+                  className="p-2 bg-[#F8E8E8] hover:bg-[#D95D5D] hover:text-white border-[2px] border-[#111111] brutal-shadow-sm transition-all"
+                  aria-label="Log Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login?redirect=/dashboard"
+                className="px-3.5 py-2 bg-[#F6C6D8] hover:bg-[#ffb3cc] text-[#111111] border-[2.5px] border-[#111111] brutal-shadow-sm font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                Dashboard
+              </Link>
+
+              <Link
+                href="/signup"
+                className="px-4 py-2 bg-[#F4CD3F] hover:bg-[#ffe066] text-[#111111] border-[2.5px] border-[#111111] brutal-btn font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
+              >
+                Get Started
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </>
+          )}
         </div>
+
 
         {/* MOBILE HAMBURGER BUTTON */}
         <div className="flex sm:hidden items-center gap-2">
