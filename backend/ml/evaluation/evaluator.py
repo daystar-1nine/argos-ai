@@ -137,7 +137,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 1: Validation & Metadata Extraction
         # -------------------------------------------------------------
-        notify(1, "Validating video integrity & inspecting metadata")
+        notify(1, "01 VIDEO VALIDATION: Inspecting video integrity & format")
         try:
             meta = get_video_metadata(str(video_path_obj))
         except CorruptedVideoError as cve:
@@ -165,7 +165,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 2: Audio Track Extraction
         # -------------------------------------------------------------
-        notify(2, "Extracting audio track (16kHz PCM mono WAV)")
+        notify(2, "02 AUDIO EXTRACTION: Extracting 16kHz PCM audio stream")
         prep_start = time.perf_counter()
         try:
             prep_data = preprocess_video_pipeline(str(video_path_obj))
@@ -208,10 +208,10 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 3 & 4: Face Detection & Lip Region Extraction
         # -------------------------------------------------------------
-        notify(3, "Detecting human face trajectory across frames")
+        notify(3, "03 FACE DETECTION: Tracking facial landmarks across frames")
         vision_start = time.perf_counter()
         vision_result = self.lip_extractor.process_frames(frames_rgb, timestamps)
-        notify(4, "Tracking & normalizing 96x96 lip sequences")
+        notify(4, "04 LIP EXTRACTION: Normalizing 112x112 lip ROI sequences")
         timings["vision"] = round(time.perf_counter() - vision_start, 3)
 
         if not vision_result["face_detected"]:
@@ -242,7 +242,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 5: Audio Feature Extraction (80-Band Mel & MFCC)
         # -------------------------------------------------------------
-        notify(5, "Extracting 80-band Mel-spectrogram & acoustic features")
+        notify(5, "05 AUDIO FEATURES: Extracting 80-band Mel-spectrogram & envelope")
         audio_start = time.perf_counter()
         try:
             audio_features = self.audio_extractor.extract_features(audio_wav_path)
@@ -262,7 +262,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 6: Synchronized Temporal Windowing
         # -------------------------------------------------------------
-        notify(6, "Constructing aligned temporal windows (0.8s window, 0.2s stride)")
+        notify(6, "06 TEMPORAL WINDOWING: Constructing 0.8s synchronized sliding windows")
         windows = self.window_builder.build_windows(
             lip_crops=lip_crops,
             timestamps=timestamps,
@@ -285,7 +285,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 7: Audio-Visual Synchronization Model (SyncNet)
         # -------------------------------------------------------------
-        notify(7, "Executing SyncNet Viseme-Phoneme temporal alignment")
+        notify(7, "07 AUDIO-VISUAL SYNCHRONIZATION: SyncNet viseme-phoneme cross-correlation")
         sync_start = time.perf_counter()
         window_sync_scores: List[float] = []
         window_start_times: List[float] = []
@@ -308,7 +308,7 @@ class VideoEvaluator:
         # -------------------------------------------------------------
         # Stage 8: Temporal Anomaly & Trajectory Analysis
         # -------------------------------------------------------------
-        notify(8, "Conducting temporal trajectory & desync cluster analysis")
+        notify(8, "08 TEMPORAL ANALYSIS: Measuring temporal lag & drift anomalies")
         temporal_result = self.temporal_analyzer.analyze(
             window_sync_scores=window_sync_scores,
             window_start_times=window_start_times,
@@ -319,11 +319,16 @@ class VideoEvaluator:
         )
 
         # -------------------------------------------------------------
-        # Stage 9: PyTorch Multimodal Classifier
+        # Stage 9: Multimodal Feature Fusion
         # -------------------------------------------------------------
-        notify(9, "Running PyTorch Multimodal Classifier")
-        clf_start = time.perf_counter()
+        notify(9, "09 MULTIMODAL FUSION: Fusing acoustic, visual & kinematic features")
         feature_vector = temporal_result["feature_vector"]
+
+        # -------------------------------------------------------------
+        # Stage 10: PyTorch Multimodal Classifier
+        # -------------------------------------------------------------
+        notify(10, "10 REAL/FAKE CLASSIFICATION: Running PyTorch Multimodal Classifier")
+        clf_start = time.perf_counter()
         classification = classify_temporal_features(
             model=self.classifier_model,
             feature_vector=feature_vector,
@@ -332,9 +337,9 @@ class VideoEvaluator:
         timings["classifier"] = round(time.perf_counter() - clf_start, 3)
 
         # -------------------------------------------------------------
-        # Stage 10: Forensic Keyframe Evidence Generation
+        # Stage 11: Forensic Keyframe Evidence Generation
         # -------------------------------------------------------------
-        notify(10, "Extracting real forensic keyframe exhibits")
+        notify(11, "11 EVIDENCE GENERATION: Extracting anomalous keyframe exhibits")
         ev_start = time.perf_counter()
         suspicious_intervals = temporal_result["suspicious_intervals"]
 
@@ -358,9 +363,9 @@ class VideoEvaluator:
             pass
 
         # -------------------------------------------------------------
-        # Stage 11: Final Timeline & Debug Artifacts
+        # Stage 12: Final Timeline & Complete Dossier
         # -------------------------------------------------------------
-        notify(11, "Packaging forensic analysis & timeline")
+        notify(12, "12 COMPLETE: Packaging forensic analysis & timeline")
         total_duration = round(time.perf_counter() - total_start, 2)
         timings["total"] = total_duration
 
@@ -413,13 +418,16 @@ class VideoEvaluator:
             })
 
         # Assemble full result dictionary
+        raw_verdict = classification["verdict"]
+        final_verdict = "POTENTIALLY MANIPULATED" if raw_verdict in ["POTENTIALLY_MANIPULATED", "FAKE", "POTENTIALLY MANIPULATED"] else "REAL"
+
         result_payload = {
             "video": video_path_obj.name,
             "video_path": str(video_path_obj),
             "video_id": video_id,
             "ground_truth": ground_truth or "unspecified",
-            "prediction": classification["verdict"].lower(),
-            "verdict": classification["verdict"],
+            "prediction": final_verdict.lower(),
+            "verdict": final_verdict,
             "confidence": classification["confidence"],
             "confidence_pct": classification["confidence_pct"],
             "real_probability": classification["real_probability"],

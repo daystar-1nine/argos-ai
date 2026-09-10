@@ -47,8 +47,9 @@ def _run_evaluation_background(test_id: str, video_path: str, ground_truth: Opti
 
     def on_progress(stage_num: int, stage_desc: str):
         if test_id in _test_jobs:
-            progress = round((stage_num / 11.0) * 100.0)
+            progress = min(100, round((stage_num / 12.0) * 100.0))
             _test_jobs[test_id]["stage_number"] = stage_num
+            _test_jobs[test_id]["total_stages"] = 12
             _test_jobs[test_id]["current_stage"] = stage_desc
             _test_jobs[test_id]["progress_pct"] = progress
 
@@ -101,7 +102,7 @@ def list_benchmark_samples():
 @router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
 async def upload_and_analyze_video(
     file: UploadFile = File(...),
-    ground_truth: Optional[str] = Form(None),
+    ground_truth: Optional[str] = Form("unknown"),
     debug: bool = Form(True),
 ):
     """
@@ -122,15 +123,18 @@ async def upload_and_analyze_video(
         content = await file.read()
         f_out.write(content)
 
+    gt_value = (ground_truth or "unknown").strip().lower()
+
     _test_jobs[test_id] = {
         "test_id": test_id,
         "filename": file.filename,
         "video_path": str(saved_video_path),
-        "ground_truth": ground_truth,
+        "ground_truth": gt_value,
         "status": "processing",
-        "current_stage": "Video Uploaded & Validated",
+        "current_stage": "01 VIDEO VALIDATION: Ingesting & inspecting streams",
         "stage_number": 1,
-        "progress_pct": 5,
+        "total_stages": 12,
+        "progress_pct": 8,
         "result": None,
         "error_message": None,
     }
@@ -138,7 +142,7 @@ async def upload_and_analyze_video(
     # Launch evaluation worker thread
     thread = threading.Thread(
         target=_run_evaluation_background,
-        args=(test_id, str(saved_video_path), ground_truth, debug),
+        args=(test_id, str(saved_video_path), gt_value, debug),
         daemon=True,
     )
     thread.start()
@@ -147,6 +151,7 @@ async def upload_and_analyze_video(
         "test_id": test_id,
         "status": "processing",
         "filename": file.filename,
+        "ground_truth": gt_value,
         "message": "Video accepted. Multimodal forensic evaluation underway.",
     }
 
@@ -155,6 +160,7 @@ async def upload_and_analyze_video(
 def analyze_existing_sample(
     category: str = Query(..., pattern="^(real|fake|edge_cases)$"),
     filename: str = Query(...),
+    ground_truth: Optional[str] = Query(None),
     debug: bool = Query(True),
 ):
     """
@@ -165,23 +171,25 @@ def analyze_existing_sample(
     if not sample_path.exists():
         raise EntityNotFoundException("TestSample", f"{category}/{filename}")
 
+    gt_value = (ground_truth or category).strip().lower()
     test_id = f"tst_{uuid.uuid4().hex[:10]}"
     _test_jobs[test_id] = {
         "test_id": test_id,
         "filename": filename,
         "video_path": str(sample_path),
-        "ground_truth": category,
+        "ground_truth": gt_value,
         "status": "processing",
-        "current_stage": "Video Loaded from Benchmark Matrix",
+        "current_stage": "01 VIDEO VALIDATION: Loading media from benchmark dataset",
         "stage_number": 1,
-        "progress_pct": 5,
+        "total_stages": 12,
+        "progress_pct": 8,
         "result": None,
         "error_message": None,
     }
 
     thread = threading.Thread(
         target=_run_evaluation_background,
-        args=(test_id, str(sample_path), category, debug),
+        args=(test_id, str(sample_path), gt_value, debug),
         daemon=True,
     )
     thread.start()
@@ -190,6 +198,7 @@ def analyze_existing_sample(
         "test_id": test_id,
         "status": "processing",
         "filename": filename,
+        "ground_truth": gt_value,
         "message": f"Sample '{filename}' ({category.upper()}) queued for forensic analysis.",
     }
 

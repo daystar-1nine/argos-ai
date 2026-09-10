@@ -37,15 +37,15 @@
   },
   "processing": {
     "device": "CPU (Multi-Threaded)",
-    "duration_seconds": 0.4,
+    "duration_seconds": 0.39,
     "timings": {
-      "preprocessing": 0.076,
-      "vision": 0.113,
+      "preprocessing": 0.077,
+      "vision": 0.115,
       "audio": 0.004,
-      "av_sync": 0.188,
+      "av_sync": 0.18,
       "classifier": 0.001,
       "evidence": 0.001,
-      "total": 0.4
+      "total": 0.39
     }
   },
   "model": {

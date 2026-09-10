@@ -84,7 +84,7 @@ def test_full_forensic_lifecycle():
     result_res = client.get(f"/api/analyses/{analysis_id}/result")
     assert result_res.status_code == 200
     result_data = result_res.json()
-    assert result_data["verdict"] in ["REAL", "POTENTIALLY_MANIPULATED"]
+    assert result_data["verdict"] in ["REAL", "POTENTIALLY_MANIPULATED", "POTENTIALLY MANIPULATED"]
     assert result_data["confidence"] is not None
     assert "visual_score" in result_data
     assert "audio_score" in result_data

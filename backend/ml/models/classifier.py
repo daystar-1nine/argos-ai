@@ -109,7 +109,7 @@ def classify_temporal_features(
 
     # Decision rule
     if fake_prob >= 0.50:
-        verdict = "POTENTIALLY_MANIPULATED" if fake_prob < 0.85 else "FAKE"
+        verdict = "POTENTIALLY MANIPULATED"
         confidence = fake_prob
     else:
         verdict = "REAL"

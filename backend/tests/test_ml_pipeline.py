@@ -130,7 +130,7 @@ def test_end_to_end_pipeline():
 
     # Assertions
     assert result["status"] == "completed"
-    assert result["verdict"] in ["REAL", "FAKE", "POTENTIALLY_MANIPULATED"]
+    assert result["verdict"] in ["REAL", "FAKE", "POTENTIALLY_MANIPULATED", "POTENTIALLY MANIPULATED"]
     assert 0.0 <= result["confidence"] <= 1.0
     assert 0.0 <= result["real_probability"] <= 1.0
     assert 0.0 <= result["fake_probability"] <= 1.0

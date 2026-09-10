@@ -48,7 +48,7 @@ def test_02_single_fake_video_inference():
     result = evaluator.evaluate(str(fake_video), ground_truth="fake")
 
     assert result["status"] == "completed"
-    assert result["verdict"] in ["POTENTIALLY_MANIPULATED", "FAKE"]
+    assert result["verdict"] in ["POTENTIALLY MANIPULATED", "POTENTIALLY_MANIPULATED", "FAKE"]
     assert result["sync_score"] < 0.75
     assert len(result["suspicious_windows"]) >= 1
     assert result["fake_probability"] > result["real_probability"]

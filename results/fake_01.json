@@ -3,8 +3,8 @@
   "video_path": "S:\\Hackathon\\Argos AI\\data\\test\\fake\\fake_01.mp4",
   "video_id": "fake_01",
   "ground_truth": "fake",
-  "prediction": "potentially_manipulated",
-  "verdict": "POTENTIALLY_MANIPULATED",
+  "prediction": "potentially manipulated",
+  "verdict": "POTENTIALLY MANIPULATED",
   "confidence": 0.5597,
   "confidence_pct": 56.0,
   "real_probability": 0.4403,
@@ -47,15 +47,15 @@
   },
   "processing": {
     "device": "CPU (Multi-Threaded)",
-    "duration_seconds": 0.4,
+    "duration_seconds": 0.42,
     "timings": {
-      "preprocessing": 0.084,
-      "vision": 0.111,
+      "preprocessing": 0.096,
+      "vision": 0.105,
       "audio": 0.004,
-      "av_sync": 0.188,
-      "classifier": 0.0,
-      "evidence": 0.001,
-      "total": 0.4
+      "av_sync": 0.178,
+      "classifier": 0.001,
+      "evidence": 0.019,
+      "total": 0.42
     }
   },
   "model": {
