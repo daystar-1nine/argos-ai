@@ -1,0 +1,112 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # ARGOS AI - FastAPI Application Server
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: argos_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - DATABASE_URL=postgresql+psycopg2://argos:argos_secure_password_2026@postgres:5432/argos_ai
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=argos-production-secret-matrix-2026-c2pa
+      - JWT_SECRET=argos-production-jwt-sign-matrix-2026
+    volumes:
+      - argos_storage:/app/storage
+      - argos_models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - argos_net
+
+  # ============================================================================
+  # ARGOS AI - Celery ML Worker
+  # ============================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: argos_ml_worker
+    restart: unless-stopped
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+psycopg2://argos:argos_secure_password_2026@postgres:5432/argos_ai
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - argos_storage:/app/storage
+      - argos_models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - argos_net
+
+  # ============================================================================
+  # PostgreSQL 16 Database
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: argos_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=argos
+      - POSTGRES_PASSWORD=argos_secure_password_2026
+      - POSTGRES_DB=argos_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - argos_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argos -d argos_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - argos_net
+
+  # ============================================================================
+  # Redis 7 In-Memory Broker & Cache
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: argos_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - argos_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - argos_net
+
+volumes:
+  argos_storage:
+  argos_models:
+  argos_pgdata:
+  argos_redisdata:
+
+networks:
+  argos_net:
+    driver: bridge

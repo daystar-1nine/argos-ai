@@ -1,6 +1,50 @@
+# ==============================================================================
+# ARGOS AI Backend - Python Core Dependencies
+# Production dependencies for FastAPI, PostgreSQL, Redis/Celery, and PyTorch ML
+# ==============================================================================
+
+# Web Framework & API Server
 fastapi>=0.110.0
-uvicorn>=0.28.0
+uvicorn[standard]>=0.28.0
 pydantic>=2.6.0
+pydantic-settings>=2.2.0
 python-multipart>=0.0.9
-reportlab>=4.1.0
 requests>=2.31.0
+httpx>=0.27.0
+websockets>=12.0
+
+# Database & Migrations
+SQLAlchemy>=2.0.28
+alembic>=1.13.1
+psycopg2-binary>=2.9.9
+asyncpg>=0.29.0
+
+# Asynchronous Background Worker & Cache
+redis>=5.0.3
+celery>=5.3.6
+
+# Security & Cryptography
+PyJWT>=2.8.0
+bcrypt>=4.1.2
+cryptography>=42.0.5
+
+# Machine Learning & Neural Inference (Problem Statement 4)
+torch>=2.2.0
+torchaudio>=2.2.0
+numpy>=1.26.0
+scipy>=1.12.0
+scikit-learn>=1.4.0
+
+# Vision, Face & Audio Preprocessing
+opencv-python>=4.9.0.80
+mediapipe>=0.10.11
+imageio-ffmpeg>=0.5.1
+librosa>=0.10.1
+soundfile>=0.12.1
+
+# Forensic PDF Dossier Generation
+reportlab>=4.1.0
+
+# Testing & Verification
+pytest>=8.1.0
+pytest-asyncio>=0.23.0

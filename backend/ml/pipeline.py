@@ -15,6 +15,8 @@ from ml.config import (
     DEVICE_NAME,
     VIDEO_SAMPLE_FPS,
     TEMP_DIR,
+    WINDOW_FRAMES,
+    WINDOW_STRIDE_FRAMES,
 )
 from ml.preprocessing.video_processor import (
     preprocess_video_pipeline,
@@ -183,6 +185,29 @@ class ArgosDeepfakePipeline:
         except Exception:
             pass
 
+        # Format suspicious intervals into clean dictionary structures
+        formatted_windows = []
+        for inv in suspicious_intervals:
+            s_time = getattr(inv, "start_time", 0.0)
+            e_time = getattr(inv, "end_time", 0.0)
+            avg_s = getattr(inv, "avg_sync_score", 0.5)
+            min_s = getattr(inv, "min_sync_score", 0.5)
+            sev = getattr(inv, "severity", "HIGH")
+            w_idx = getattr(inv, "window_indices", [])
+            s_frame = int(w_idx[0] * WINDOW_STRIDE_FRAMES) if w_idx else int(s_time * VIDEO_SAMPLE_FPS)
+            e_frame = int(w_idx[-1] * WINDOW_STRIDE_FRAMES + WINDOW_FRAMES) if w_idx else int(e_time * VIDEO_SAMPLE_FPS)
+
+            formatted_windows.append({
+                "start_sec": round(float(s_time), 2),
+                "end_sec": round(float(e_time), 2),
+                "start_frame": s_frame,
+                "end_frame": e_frame,
+                "min_sync": round(float(min_s), 3),
+                "mean_sync": round(float(avg_s), 3),
+                "risk_level": sev,
+                "reason": f"Lip-sync anomaly: audio-visual correlation dropped to {min_s * 100:.1f}%.",
+            })
+
         return {
             "analysis_id": analysis_id,
             "video_id": Path(video_path).name,
@@ -196,7 +221,7 @@ class ArgosDeepfakePipeline:
             "audio_score": audio_pct,
             "sync_score": sync_pct,
             "temporal_mismatch_ms": f"{int(stats.get('estimated_lag_frames', 0.0) * 40):+d}ms",
-            "suspicious_windows": suspicious_intervals,
+            "suspicious_windows": formatted_windows,
             "evidence_frames": evidence_frames,
             "analysis": {
                 "face_detected": face_detected,

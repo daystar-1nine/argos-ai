@@ -9,3 +9,5 @@ dist/
 build/
 backend/temp/
 backend/static/evidence/
+backend/storage/
+*.db
