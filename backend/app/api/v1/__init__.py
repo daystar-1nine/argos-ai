@@ -7,6 +7,7 @@ from .monitoring import router as monitoring_router
 from .takedown import router as takedown_router
 from .verify import router as verify_router
 from .reports import router as reports_router
+from .analyze import router as analyze_router
 
 api_router = APIRouter()
 api_router.include_router(authenticity_router)
@@ -17,3 +18,4 @@ api_router.include_router(monitoring_router)
 api_router.include_router(takedown_router)
 api_router.include_router(verify_router)
 api_router.include_router(reports_router)
+api_router.include_router(analyze_router)
