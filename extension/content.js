@@ -24,14 +24,17 @@
 
   // Make floating window draggable by handle
   function makeElementDraggable(elm, handle) {
+    if (!handle || !elm) return;
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
+    handle.style.cursor = "grab";
     handle.addEventListener("mousedown", dragMouseDown);
 
     function dragMouseDown(e) {
-      if (e.target.closest(".argos-hud-close")) return;
+      if (e.target.closest("button") || e.target.closest("a") || e.target.closest("input")) return;
       e.preventDefault();
 
+      handle.style.cursor = "grabbing";
       pos3 = e.clientX;
       pos4 = e.clientY;
 
@@ -46,16 +49,19 @@
       pos3 = e.clientX;
       pos4 = e.clientY;
 
-      const newTop = elm.offsetTop - pos2;
-      const newLeft = elm.offsetLeft - pos1;
+      const rect = elm.getBoundingClientRect();
+      const newTop = rect.top - pos2;
+      const newLeft = rect.left - pos1;
 
-      elm.style.top = `${Math.max(10, newTop)}px`;
-      elm.style.left = `${Math.max(10, newLeft)}px`;
+      elm.style.top = `${Math.max(5, newTop)}px`;
+      elm.style.left = `${Math.max(5, newLeft)}px`;
       elm.style.right = "auto";
       elm.style.bottom = "auto";
+      elm.style.transform = "none";
     }
 
     function closeDragElement() {
+      handle.style.cursor = "grab";
       document.removeEventListener("mouseup", closeDragElement);
       document.removeEventListener("mousemove", elementDrag);
     }
