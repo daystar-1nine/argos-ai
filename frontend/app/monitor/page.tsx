@@ -1,24 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/navigation/Sidebar';
 import DashboardHeader from '@/components/navigation/DashboardHeader';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Globe, Search, ExternalLink, ChevronRight, Eye, AlertTriangle } from 'lucide-react';
-import { DEMO_MATCHES, DEMO_MONITORING_SOURCES } from '@/lib/data';
+import { 
+  Globe, 
+  Search, 
+  ExternalLink, 
+  ChevronRight, 
+  Eye, 
+  AlertTriangle, 
+  Radio, 
+  ShieldAlert, 
+  Fingerprint, 
+  Compass, 
+  Layers,
+  ArrowRight
+} from 'lucide-react';
+import ArgosGlobeWrapper from '@/components/monitoring/ArgosGlobeWrapper';
+import { 
+  DEMO_TELEMETRY_REGIONS, 
+  MONITORING_DISCLAIMER, 
+  IS_SIMULATED_DATA,
+  TelemetryRegion 
+} from '@/lib/monitoringData';
+import { DetectedMatch } from '@/lib/types';
 
 export default function MonitorPage() {
-  const [selectedRegion, setSelectedRegion] = useState('All');
+  const [selectedRegion, setSelectedRegion] = useState<string>('All');
+  const [highlightedCardId, setHighlightedCardId] = useState<string | null>('match_01');
 
-  const regions = [
-    { name: 'India', coords: { x: 70, y: 48 }, nodes: '4 active nodes' },
-    { name: 'USA', coords: { x: 22, y: 35 }, nodes: '12 active nodes' },
-    { name: 'UK', coords: { x: 48, y: 28 }, nodes: '6 active nodes' },
-    { name: 'Singapore', coords: { x: 76, y: 56 }, nodes: '3 active nodes' },
-    { name: 'Australia', coords: { x: 86, y: 72 }, nodes: '3 active nodes' }
-  ];
+  // Flatten all derivatives across all regions for 'All' view
+  const allDerivatives = useMemo(() => {
+    const list: { match: DetectedMatch; regionName: string; regionRisk: string }[] = [];
+    DEMO_TELEMETRY_REGIONS.forEach((reg) => {
+      reg.derivatives.forEach((d) => {
+        list.push({ match: d, regionName: reg.name, regionRisk: reg.risk });
+      });
+    });
+    return list;
+  }, []);
+
+  const activeRegionData = useMemo(() => {
+    return DEMO_TELEMETRY_REGIONS.find(
+      (r) => r.name.toLowerCase() === selectedRegion.toLowerCase()
+    );
+  }, [selectedRegion]);
+
+  const displayedDerivatives = useMemo(() => {
+    if (selectedRegion === 'All' || !activeRegionData) {
+      return allDerivatives;
+    }
+    return activeRegionData.derivatives.map((d) => ({
+      match: d,
+      regionName: activeRegionData.name,
+      regionRisk: activeRegionData.risk
+    }));
+  }, [selectedRegion, activeRegionData, allDerivatives]);
+
+  // Handle card click: updates highlighted card and rotates globe to region
+  const handleCardClick = (matchId: string, regionName: string) => {
+    setHighlightedCardId(matchId);
+    setSelectedRegion(regionName);
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8E8E8] text-[#111111] font-mono">
@@ -27,17 +74,22 @@ export default function MonitorPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader title="Argos Global Watch" />
 
-        <div className="p-6 lg:p-8 space-y-8 flex-1 max-w-[1440px] w-full mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 flex-1 max-w-[1440px] w-full mx-auto">
           
           <PageHeader
             badge="TELEMETRY SENSOR GRID"
             badgeColor="mauve"
             title="ARGOS GLOBAL WATCH"
-            subtitle='"Monitoring supported public, indexed and integrated sources."'
+            subtitle={`"${MONITORING_DISCLAIMER}"`}
             actions={
-              <div className="p-2.5 bg-white border-[2px] border-[#111111] text-xs font-bold flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#8BCF9B] rounded-full led-blink" />
-                <span>5 CLUSTERS SYNCING</span>
+              <div className="flex items-center gap-2">
+                <div className="p-2.5 bg-white border-[2px] border-[#111111] text-xs font-bold flex items-center gap-2 brutal-shadow-sm">
+                  <span className="w-2.5 h-2.5 bg-[#8BCF9B] rounded-full led-blink-fast" />
+                  <span>5 CLUSTERS SYNCING</span>
+                </div>
+                <div className="p-2.5 bg-[#EFD99C] border-[2px] border-[#111111] text-[10px] font-black uppercase hidden sm:block">
+                  SIMULATED SENSORS
+                </div>
               </div>
             }
           />
@@ -52,7 +104,7 @@ export default function MonitorPage() {
 
             <div className="bg-[#F6C6D8] border-[3px] border-[#111111] p-4 brutal-shadow-sm">
               <div className="text-[10px] text-gray-700 font-bold uppercase">POTENTIAL MATCHES</div>
-              <div className="text-3xl font-black font-display mt-1">6 found</div>
+              <div className="text-3xl font-black font-display mt-1">7 found</div>
               <div className="text-[10px] text-gray-600 mt-1">ACROSS 3 PLATFORMS</div>
             </div>
 
@@ -69,91 +121,191 @@ export default function MonitorPage() {
             </div>
           </div>
 
-          {/* Interactive World Map Section */}
-          <div className="bg-[#111111] border-[4px] border-[#111111] brutal-shadow-lg p-6 text-[#EFD99C]">
-            <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-white/20 text-xs">
-              <span className="font-bold text-[#F4CD3F] flex items-center gap-2">
-                <Globe className="w-4 h-4" /> REGIONAL TELEMETRY MAP (CLICK PIN TO FILTER)
-              </span>
-              <span className="text-white/60 text-[10px]">
-                SCOPE: SUPPORTED INDEXED WEB SOURCES
-              </span>
-            </div>
+          {/* ============================================================== */}
+          {/* MAIN TWO-COLUMN SECTION: 3D GLOBE (LEFT) & DERIVATIVES (RIGHT) */}
+          {/* ============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* Left 7 Cols: Interactive 3D WebGL Argos Globe */}
+            <div className="lg:col-span-7 flex flex-col space-y-3">
+              <ArgosGlobeWrapper
+                selectedRegion={selectedRegion}
+                onSelectRegion={(reg) => {
+                  setSelectedRegion(reg);
+                  if (reg !== selectedRegion) setHighlightedCardId(null);
+                }}
+                highlightedDetectionId={highlightedCardId || undefined}
+              />
 
-            {/* SVG Map */}
-            <div className="relative aspect-[21/9] w-full bg-[#181d24] border border-white/20 p-2 overflow-hidden">
-              <div className="absolute inset-0 opacity-15 retro-grid" />
-              
-              <svg className="w-full h-full text-white/15" viewBox="0 0 100 60">
-                <path d="M12,14 Q25,12 32,24 Q24,34 16,30 Z" fill="currentColor" />
-                <path d="M26,35 Q34,36 30,52 Q22,48 26,35 Z" fill="currentColor" />
-                <path d="M44,14 Q54,12 56,25 Q46,28 44,14 Z" fill="currentColor" />
-                <path d="M46,28 Q58,28 55,48 Q44,45 46,28 Z" fill="currentColor" />
-                <path d="M58,12 Q82,10 84,34 Q66,38 58,12 Z" fill="currentColor" />
-                <path d="M78,42 Q88,40 88,54 Q76,52 78,42 Z" fill="currentColor" />
-              </svg>
-
-              {regions.map((reg) => (
-                <div
-                  key={reg.name}
-                  style={{ left: `${reg.coords.x}%`, top: `${reg.coords.y}%` }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-                  onClick={() => setSelectedRegion(reg.name)}
-                >
-                  <div className="relative flex items-center justify-center">
-                    <span className="w-3 h-3 bg-[#D95D5D] border border-white led-blink" />
-                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-[9px] bg-black text-[#F4CD3F] px-1 py-0.2 whitespace-nowrap border border-white/30">
-                      {reg.name}
-                    </span>
-                  </div>
+              {/* Telemetry Operational Notes below globe */}
+              <div className="p-3 bg-white border-[2px] border-[#111111] brutal-shadow-sm text-[11px] flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#844469] uppercase">SENSOR TELEMETRY:</span>
+                  <span className="text-gray-700">
+                    {activeRegionData 
+                      ? `${activeRegionData.name.toUpperCase()} Cluster — ${activeRegionData.activeNodes} nodes active (${activeRegionData.clusterStatus})`
+                      : 'All 5 regional sensor clusters active. Click any region on globe to filter threat feed.'}
+                  </span>
                 </div>
-              ))}
+                <span className="text-[10px] bg-[#EFD99C] px-2 py-0.5 font-bold border border-[#111111]">
+                  LATENCY &lt;45ms
+                </span>
+              </div>
             </div>
 
-            {/* Region Switcher Buttons */}
-            <div className="mt-4 pt-3 border-t border-white/20 flex flex-wrap gap-2 text-[10px]">
-              <button
-                onClick={() => setSelectedRegion('All')}
-                className={`px-2.5 py-1 border border-white/30 ${selectedRegion === 'All' ? 'bg-[#F4CD3F] text-black font-bold' : 'bg-black text-white/80'}`}
-              >
-                All Regions
-              </button>
-              {regions.map((r) => (
-                <button
-                  key={r.name}
-                  onClick={() => setSelectedRegion(r.name)}
-                  className={`px-2.5 py-1 border border-white/30 ${selectedRegion === r.name ? 'bg-[#F4CD3F] text-black font-bold' : 'bg-black text-white/80'}`}
-                >
-                  {r.name} ({r.nodes})
-                </button>
-              ))}
+            {/* Right 5 Cols: SUSPICIOUS DERIVATIVES DISCOVERED */}
+            <div className="lg:col-span-5 flex flex-col bg-white border-[3px] border-[#111111] brutal-shadow overflow-hidden">
+              
+              {/* Header */}
+              <div className="p-3.5 bg-[#EFD99C] border-b-[2px] border-[#111111] flex items-center justify-between text-xs font-black uppercase">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-[#844469]" />
+                  <span>SUSPICIOUS DERIVATIVES DISCOVERED</span>
+                </div>
+                <span className="text-[10px] bg-black text-[#F4CD3F] px-2 py-0.5 font-bold">
+                  {selectedRegion.toUpperCase()} ({displayedDerivatives.length})
+                </span>
+              </div>
+
+              {/* Sub-bar Filter Status & Helper */}
+              <div className="p-2.5 bg-[#111111] text-[#EFD99C] border-b border-[#111111] flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#D95D5D] led-blink" />
+                  <span>SELECT CARD TO FOCUS SENSOR CAMERA</span>
+                </span>
+                {selectedRegion !== 'All' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRegion('All')}
+                    className="text-[#F4CD3F] hover:underline font-bold"
+                  >
+                    [ RESET TO ALL ]
+                  </button>
+                )}
+              </div>
+
+              {/* Scrollable Derivative Cards Container */}
+              <div className="p-3.5 space-y-3 max-h-[580px] overflow-y-auto bg-[#F8E8E8]">
+                {displayedDerivatives.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500 font-mono text-xs">
+                    No suspicious derivatives detected in this regional cluster.
+                  </div>
+                ) : (
+                  displayedDerivatives.map(({ match, regionName, regionRisk }) => {
+                    const isSelected = highlightedCardId === match.id;
+                    const isCritical = match.riskLevel === 'critical';
+
+                    return (
+                      <div
+                        key={match.id}
+                        onClick={() => handleCardClick(match.id, regionName)}
+                        className={`p-3.5 bg-white border-[3px] cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-[#D95D5D] brutal-shadow ring-2 ring-[#D95D5D]/20'
+                            : 'border-[#111111] hover:border-[#844469] brutal-shadow-sm'
+                        }`}
+                      >
+                        {/* Card Top Row: Platform & Risk Badge */}
+                        <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[#111111]/15 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isCritical ? 'bg-[#D95D5D] led-blink' : 'bg-[#F4CD3F]'
+                              }`}
+                            />
+                            <span className="font-bold text-[#111111]">{match.platform}</span>
+                            <span className="text-[10px] text-gray-500">({regionName})</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-xs text-[#844469]">
+                              {match.matchPercentage}% MATCH
+                            </span>
+                            <StatusBadge
+                              status={isCritical ? 'danger' : 'warning'}
+                              label={match.riskLevel.toUpperCase()}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Source Name & Detected Manipulation */}
+                        <div className="space-y-1.5">
+                          <div className="text-[11px] font-bold text-gray-800 line-clamp-1">
+                            {match.sourceName}
+                          </div>
+                          
+                          <div className="p-2 bg-[#F8E8E8] border border-[#111111]/20 text-[11px] text-[#111111] font-medium leading-relaxed">
+                            <span className="font-bold text-[#D95D5D]">ANOMALY: </span>
+                            {match.detectedManipulation}
+                          </div>
+                        </div>
+
+                        {/* Card Bottom Row: Discovered At & Action Link */}
+                        <div className="mt-3 pt-2 border-t border-[#111111]/10 flex items-center justify-between text-[10px]">
+                          <span className="text-gray-500">
+                            DETECTED: {match.discoveredAt}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {isSelected && (
+                              <span className="text-[9px] text-[#D95D5D] font-bold animate-pulse">
+                                ● GLOBE FOCUSED
+                              </span>
+                            )}
+                            <Link
+                              href={`/detections/${match.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="px-2.5 py-1 bg-[#111111] hover:bg-[#844469] text-[#F4CD3F] font-bold text-[10px] inline-flex items-center gap-1 uppercase transition-colors"
+                            >
+                              <Eye className="w-3 h-3" /> Inspect
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Right Box Footer Telemetry */}
+              <div className="p-2.5 bg-[#EFD99C] border-t-[2px] border-[#111111] flex items-center justify-between text-[10px] font-bold text-gray-700">
+                <span>INDEXED SOURCES ONLY</span>
+                <span>ESCROW EVIDENCE SECURED ✓</span>
+              </div>
+
             </div>
+
           </div>
 
-          {/* Results Table: Source, Match %, Status, Manipulation, Detected, Action */}
+          {/* Bottom Historical Forensic Table */}
           <div className="bg-white border-[3px] border-[#111111] brutal-shadow overflow-x-auto">
             <div className="p-4 bg-[#EFD99C] border-b-[2px] border-[#111111] flex items-center justify-between text-xs font-black uppercase">
-              <span>SUSPICIOUS DERIVATIVES DISCOVERED</span>
-              <span className="text-gray-600">3 ACTIVE PLATFORMS</span>
+              <span>ACTIVE DERIVATIVE AUDIT LOG</span>
+              <span className="text-gray-600">ALL AUDITED INCIDENT MATCHES</span>
             </div>
 
             <table className="w-full text-left font-mono text-xs border-collapse">
               <thead>
                 <tr className="bg-[#F8E8E8] border-b border-[#111111] text-[10px] font-black uppercase text-gray-700">
-                  <th className="p-3">Source</th>
+                  <th className="p-3">Source & Platform</th>
                   <th className="p-3">Match %</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3">Manipulation</th>
+                  <th className="p-3">Manipulation Findings</th>
                   <th className="p-3">Detected</th>
                   <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#111111]/20">
-                {DEMO_MATCHES.map((match) => (
-                  <tr key={match.id} className="hover:bg-[#F6C6D8]/30 transition-colors">
+                {allDerivatives.map(({ match, regionName }) => (
+                  <tr 
+                    key={match.id} 
+                    className={`transition-colors ${
+                      highlightedCardId === match.id ? 'bg-[#F6C6D8]/50' : 'hover:bg-[#F6C6D8]/20'
+                    }`}
+                  >
                     <td className="p-3 font-bold">
                       <div>{match.sourceName}</div>
-                      <div className="text-[10px] text-gray-500">{match.platform}</div>
+                      <div className="text-[10px] text-gray-500">{match.platform} ({regionName})</div>
                     </td>
                     <td className="p-3">
                       <span className="font-black text-sm text-[#844469]">{match.matchPercentage}%</span>
