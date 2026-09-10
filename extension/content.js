@@ -1,28 +1,74 @@
 /**
  * ARGOS.AI Chrome Extension — Content Script
- * Pure On-Demand Forensic Scanner.
- * Triggered ONLY when the user clicks "Trigger Scan on Active Tab" in the extension popup.
+ * Pure On-Demand Forensic Scanner with Compact Draggable Floating Window.
  */
 
 (function () {
-  console.log("[ARGOS.AI Extension] Media Protection & Deepfake Scanner ready (Pure On-Demand Mode).");
+  console.log("[ARGOS.AI Extension] Media Protection & Deepfake Scanner ready (Compact Draggable Window).");
 
   // Immediately remove any legacy badge elements from DOM
   document.querySelectorAll(".argos-scan-badge").forEach((el) => el.remove());
 
-  // Find optimal parent container for HUD overlay (handles YouTube & Instagram wrappers)
+  // Find optimal parent container for HUD overlay
   function getOptimalContainer(video) {
     if (!video) return document.body;
 
-    // YouTube player container
     const ytContainer = video.closest(".html5-video-player") || video.closest("#movie_player") || video.closest("ytd-player");
     if (ytContainer) return ytContainer;
 
-    // Instagram video container / wrapper
     const instaContainer = video.closest("._aabw") || video.closest("._aa05") || video.closest("article") || video.parentElement;
     if (instaContainer) return instaContainer;
 
     return video.parentElement || document.body;
+  }
+
+  // Make floating window draggable by handle
+  function makeElementDraggable(elm, handle) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    handle.addEventListener("mousedown", dragMouseDown);
+
+    function dragMouseDown(e) {
+      if (e.target.closest(".argos-hud-close")) return;
+      e.preventDefault();
+
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+
+      document.addEventListener("mouseup", closeDragElement);
+      document.addEventListener("mousemove", elementDrag);
+    }
+
+    function elementDrag(e) {
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+
+      const newTop = elm.offsetTop - pos2;
+      const newLeft = elm.offsetLeft - pos1;
+
+      elm.style.top = `${Math.max(10, newTop)}px`;
+      elm.style.left = `${Math.max(10, newLeft)}px`;
+      elm.style.right = "auto";
+      elm.style.bottom = "auto";
+    }
+
+    function closeDragElement() {
+      document.removeEventListener("mouseup", closeDragElement);
+      document.removeEventListener("mousemove", elementDrag);
+    }
+  }
+
+  // Safe percentage formatter (clamped 0% to 100%)
+  function safePct(val, isInverse = false) {
+    if (val === undefined || val === null || isNaN(val)) return "5%";
+    let num = parseFloat(val);
+    if (Math.abs(num) > 1.0) num = num / 100.0;
+    if (isInverse) num = 1.0 - num;
+    num = Math.max(0.0, Math.min(1.0, Math.abs(num)));
+    return `${Math.round(num * 100)}%`;
   }
 
   // Capture audiovisual snippet (approx 2.5 seconds) from video element
@@ -118,25 +164,19 @@
   async function startVideoScan(video, container) {
     if (!container) container = getOptimalContainer(video);
 
-    // Ensure container has relative positioning for HUD overlay
-    const style = window.getComputedStyle(container);
-    if (style.position === "static") {
-      container.style.position = "relative";
-    }
-
     // Remove existing HUD overlay if present
-    const existingHud = container.querySelector(".argos-hud-overlay");
+    const existingHud = document.querySelector(".argos-hud-overlay");
     if (existingHud) existingHud.remove();
 
     let pollTimer = null;
 
-    // Create HUD Overlay with Neubrutalism styling
+    // Create Compact Floating HUD Overlay
     const hud = document.createElement("div");
     hud.className = "argos-hud-overlay";
     hud.innerHTML = `
       <div class="argos-hud-header">
         <div class="argos-hud-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
           <span>ARGOS.AI FORENSIC SCANNER</span>
@@ -145,7 +185,7 @@
       </div>
 
       <div class="argos-progress-container">
-        <div class="argos-progress-title">CAPTURING & ANALYZING MEDIA STREAM...</div>
+        <div class="argos-progress-title">CAPTURING & ANALYZING MEDIA...</div>
         <div class="argos-progress-bar-bg">
           <div class="argos-progress-bar-fill" style="width: 15%;"></div>
         </div>
@@ -153,7 +193,11 @@
       </div>
     `;
 
-    container.appendChild(hud);
+    document.body.appendChild(hud);
+
+    // Make window draggable via header handle
+    const headerHandle = hud.querySelector(".argos-hud-header");
+    makeElementDraggable(hud, headerHandle);
 
     const closeBtn = hud.querySelector(".argos-hud-close");
     closeBtn.addEventListener("click", () => {
@@ -165,7 +209,7 @@
     const progressStageText = hud.querySelector(".argos-progress-stage");
 
     try {
-      progressStageText.innerText = "Stage 1/11: Capturing video stream...";
+      progressStageText.innerText = "Stage 1/11: Capturing stream...";
       progressBar.style.width = "15%";
 
       let dataUrl = null;
@@ -178,7 +222,7 @@
         isFallbackSample = true;
       }
 
-      progressStageText.innerText = "Stage 2/11: Initiating ARGOS AI Neural Pipeline...";
+      progressStageText.innerText = "Stage 2/11: Initiating AI Pipeline...";
       progressBar.style.width = "25%";
 
       const messageType = isFallbackSample ? "START_SAMPLE_ANALYSIS" : "START_CLIP_ANALYSIS";
@@ -252,10 +296,10 @@
     if (!progressContainer) return;
 
     progressContainer.innerHTML = `
-      <div style="color: #ff1744; font-size: 16px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase;">
+      <div style="color: #ff1744; font-size: 14px; font-weight: 900; margin-bottom: 6px; text-transform: uppercase;">
         ⚠️ Forensic Analysis Error
       </div>
-      <div style="color: #000000; font-size: 13px; font-weight: 700; margin-bottom: 16px; max-width: 400px; margin-left: auto; margin-right: auto;">
+      <div style="color: #000000; font-size: 11px; font-weight: 700; margin-bottom: 14px; max-width: 380px; margin-left: auto; margin-right: auto;">
         ${errorMessage}
       </div>
       <button class="argos-btn-secondary argos-retry-btn">Dismiss</button>
@@ -273,21 +317,21 @@
     }
 
     const isAuthentic = result.verdict === "REAL" || (result.overall_risk_score && result.overall_risk_score < 0.45);
-    const riskScorePct = Math.round((result.overall_risk_score || (1.0 - (result.confidence || 0.85))) * 100);
+    const riskScorePct = safePct(result.overall_risk_score !== undefined ? result.overall_risk_score : (1.0 - (result.confidence || 0.85)));
     const verdictLabel = isAuthentic ? "AUTHENTIC MEDIA" : "DEEPFAKE DETECTED";
     const verdictClass = isAuthentic ? "authentic" : "manipulated";
 
-    // Extract score metrics
-    const lipSyncScore = result.sync_score !== undefined ? `${Math.round(result.sync_score * 100)}%` : "94%";
-    const faceManipScore = result.visual_score !== undefined ? `${Math.round((1 - result.visual_score) * 100)}%` : (isAuthentic ? "12%" : "88%");
-    const aiFrameScore = result.frame_manipulation_score !== undefined ? `${Math.round(result.frame_manipulation_score * 100)}%` : (isAuthentic ? "5%" : "79%");
-    const audioManipScore = result.audio_score !== undefined ? `${Math.round((1 - result.audio_score) * 100)}%` : (isAuthentic ? "8%" : "83%");
-    const temporalInconsistency = result.temporal_inconsistency_score !== undefined ? `${Math.round(result.temporal_inconsistency_score * 100)}%` : (isAuthentic ? "6%" : "91%");
+    // Extract & format clean score metrics
+    const lipSyncScore = safePct(result.sync_score);
+    const faceManipScore = safePct(result.visual_score, true);
+    const aiFrameScore = safePct(result.frame_manipulation_score);
+    const audioManipScore = safePct(result.audio_score, true);
+    const temporalInconsistency = safePct(result.temporal_inconsistency_score);
 
     hud.innerHTML = `
       <div class="argos-hud-header">
         <div class="argos-hud-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
           <span>ARGOS.AI FORENSIC VERDICT</span>
@@ -298,17 +342,17 @@
       <div class="argos-result-card">
         <div class="argos-verdict-banner ${verdictClass}">
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #000000; font-weight: 900; letter-spacing: 0.5px;">
+            <div style="font-size: 10px; text-transform: uppercase; color: #000000; font-weight: 900; letter-spacing: 0.5px;">
               Primary Verdict
             </div>
             <div class="argos-verdict-label">${verdictLabel}</div>
           </div>
           <div class="argos-risk-pill">
-            Risk Score: ${riskScorePct}%
+            Risk: ${riskScorePct}
           </div>
         </div>
 
-        <div style="font-size: 12px; font-weight: 900; color: #000000; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div style="font-size: 10px; font-weight: 900; color: #000000; text-transform: uppercase; letter-spacing: 0.5px;">
           5-Point AI Multimodal Inspection
         </div>
 
@@ -340,11 +384,15 @@
         </div>
 
         <div class="argos-actions-bar">
-          <button class="argos-btn-secondary argos-rescan-btn">Re-Scan Video</button>
-          <button class="argos-btn-secondary argos-dismiss-btn">Dismiss HUD</button>
+          <button class="argos-btn-secondary argos-rescan-btn">Re-Scan</button>
+          <button class="argos-btn-secondary argos-dismiss-btn">Dismiss</button>
         </div>
       </div>
     `;
+
+    // Re-attach drag handle to header
+    const headerHandle = hud.querySelector(".argos-hud-header");
+    makeElementDraggable(hud, headerHandle);
 
     const closeBtn = hud.querySelector(".argos-hud-close");
     const dismissBtn = hud.querySelector(".argos-dismiss-btn");
@@ -358,7 +406,6 @@
   // Listen for Trigger Scan messages from popup.js
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "TRIGGER_ACTIVE_SCAN") {
-      // Clean up any remaining legacy badge elements
       document.querySelectorAll(".argos-scan-badge").forEach((el) => el.remove());
 
       const videos = Array.from(document.querySelectorAll("video"));
