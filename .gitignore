@@ -10,4 +10,7 @@ build/
 backend/temp/
 backend/static/evidence/
 backend/storage/
+backend/.venv/
+.venv/
 *.db
+*.mp4

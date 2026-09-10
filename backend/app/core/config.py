@@ -65,6 +65,14 @@ class Settings(BaseSettings):
     TEMP_DIR: Path = BACKEND_DIR / "temp"
     MODELS_DIR: Path = MODELS_DIR
 
+    @field_validator("BASE_STORAGE_DIR", "UPLOAD_DIR", "EVIDENCE_DIR", "REPORTS_DIR", "TEMP_DIR", "MODELS_DIR", mode="before")
+    @classmethod
+    def resolve_path(cls, v: Union[str, Path]) -> Path:
+        p = Path(v)
+        if not p.is_absolute():
+            return (BACKEND_DIR / p).resolve()
+        return p.resolve()
+
     # Media Constraints
     MAX_UPLOAD_SIZE_BYTES: int = 100 * 1024 * 1024  # 100 MB
     ALLOWED_EXTENSIONS: List[str] = [".mp4", ".mov", ".avi", ".webm", ".mkv"]
@@ -92,13 +100,27 @@ class Settings(BaseSettings):
     ANALYSIS_TIMEOUT_SEC: int = 600
 
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "*"
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

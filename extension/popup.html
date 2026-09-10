@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARGOS.AI Deepfake Forensics</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="brand">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>ARGOS.AI</span>
+      </div>
+      <div id="status-badge" class="status-badge checking">
+        <span class="dot"></span>
+        <span id="status-text">Checking...</span>
+      </div>
+    </header>
+
+    <main class="popup-body">
+      <div class="info-card">
+        <div class="card-title">Media Protection & Provenance Engine</div>
+        <p class="card-desc">
+          Detect deepfakes, face manipulation, and audio-visual lip-sync anomalies on YouTube, Instagram, and web videos.
+        </p>
+      </div>
+
+      <div class="config-section">
+        <label for="backend-url">Backend Server URL</label>
+        <div class="input-group">
+          <input type="text" id="backend-url" value="http://localhost:8000" placeholder="http://localhost:8000">
+          <button id="save-url-btn" class="btn-primary">Save</button>
+        </div>
+      </div>
+
+      <div class="action-section">
+        <button id="scan-tab-btn" class="btn-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          <span>Trigger Scan on Active Tab</span>
+        </button>
+      </div>
+    </main>
+
+    <footer class="popup-footer">
+      <span>ARGOS AI Core v3.4.0</span>
+      <a href="http://localhost:8000/docs" target="_blank" class="docs-link">API Docs</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

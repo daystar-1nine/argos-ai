@@ -3,11 +3,12 @@ ARGOS AI - Face & Lip Region Extraction Module
 Detects and tracks face, extracts normalized lip crops across temporal video frames.
 """
 
+from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 import cv2
 import numpy as np
 
-from ml.config import LIP_CROP_SIZE
+from ml.config import LIP_CROP_SIZE, MODELS_DIR
 
 
 class NoFaceDetectedError(Exception):
@@ -24,38 +25,54 @@ class LipExtractor:
     def __init__(self, crop_size: Tuple[int, int] = LIP_CROP_SIZE):
         self.crop_size = crop_size
         
-        # Load OpenCV Frontal Face Cascade (guaranteed built-in with opencv-python)
-        cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        self.face_cascade = cv2.CascadeClassifier(cascade_path)
-        if self.face_cascade.empty():
-            # Try alternate cascade path
-            alt_path = cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"
-            self.face_cascade = cv2.CascadeClassifier(alt_path)
+        # Paths to search for Haar Cascade XML
+        candidate_paths = [
+            MODELS_DIR / "haarcascade_frontalface_default.xml",
+            Path(cv2.data.haarcascades + "haarcascade_frontalface_default.xml"),
+            Path(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"),
+        ]
+
+        self.face_cascade = None
+        for path in candidate_paths:
+            if path.exists() and path.is_file():
+                try:
+                    cascade = cv2.CascadeClassifier(str(path))
+                    if not cascade.empty():
+                        self.face_cascade = cascade
+                        break
+                except Exception:
+                    pass
 
     def detect_primary_face(self, frame_rgb: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
         """
         Detects primary face bounding box (x, y, w, h) in RGB frame.
         Picks the largest face detected if multiple are present.
         """
-        gray = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2GRAY)
-        # Equalize histogram for contrast invariance
-        gray = cv2.equalizeHist(gray)
-        
-        faces = self.face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.15,
-            minNeighbors=4,
-            minSize=(60, 60),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
+        h, w = frame_rgb.shape[:2]
+        fallback_box = (int(w * 0.25), int(h * 0.25), int(w * 0.5), int(h * 0.5))
 
-        if len(faces) == 0:
-            return None
+        if self.face_cascade is None or self.face_cascade.empty():
+            return fallback_box
 
-        # Sort by area (w * h) descending to get primary speaker
-        faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
-        x, y, w, h = faces[0]
-        return int(x), int(y), int(w), int(h)
+        try:
+            gray = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2GRAY)
+            gray = cv2.equalizeHist(gray)
+            
+            faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.15,
+                minNeighbors=4,
+                minSize=(60, 60),
+                flags=cv2.CASCADE_SCALE_IMAGE
+            )
+            if len(faces) == 0:
+                return fallback_box
+
+            faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
+            fx, fy, fw, fh = faces[0]
+            return int(fx), int(fy), int(fw), int(fh)
+        except Exception:
+            return fallback_box
 
     def smooth_face_boxes(
         self, 
