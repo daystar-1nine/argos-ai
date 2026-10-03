@@ -21,24 +21,43 @@ from ml.config import (
 )
 
 
-class VideoProcessingError(Exception):
+from ml.exceptions import (
+    PipelineStageError,
+    VideoDecodingError,
+    AudioExtractionError,
+    MissingAudioStreamError,
+    TemporalSegmentationError,
+)
+
+
+class VideoProcessingError(PipelineStageError):
     """Base exception for video processing failures."""
-    pass
+    def __init__(self, message: str, stage: str = "video_decoding", error_code: str = "VIDEO_PROCESSING_FAILED", details: str = ""):
+        super().__init__(stage=stage, error_code=error_code, message=message, details=details, status_code=400)
 
 
-class MissingAudioError(VideoProcessingError):
+class MissingAudioError(MissingAudioStreamError):
     """Raised when the uploaded video does not contain an audio track."""
-    pass
+    def __init__(self, message: str = "Input video contains no audible audio track. Multimodal lip-sync analysis requires audio.", details: str = ""):
+        super().__init__(message=message, details=details)
 
 
-class CorruptedVideoError(VideoProcessingError):
+class CorruptedVideoError(VideoDecodingError):
     """Raised when the uploaded video stream is unreadable or corrupted."""
-    pass
+    def __init__(self, message: str = "Unable to open or decode video stream.", details: str = ""):
+        super().__init__(message=message, details=details)
 
 
-class VideoDurationError(VideoProcessingError):
+class VideoDurationError(PipelineStageError):
     """Raised when video duration is outside allowable bounds."""
-    pass
+    def __init__(self, message: str, details: str = ""):
+        super().__init__(
+            stage="video_validation",
+            error_code="INVALID_DURATION",
+            message=message,
+            details=details,
+            status_code=422,
+        )
 
 
 def get_ffmpeg_binary() -> str:

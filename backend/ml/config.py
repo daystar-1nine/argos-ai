@@ -41,8 +41,9 @@ WINDOW_DURATION_SEC = WINDOW_FRAMES / VIDEO_SAMPLE_FPS  # 0.8s
 WINDOW_STRIDE_SEC = WINDOW_STRIDE_FRAMES / VIDEO_SAMPLE_FPS  # 0.2s
 
 # Forensic Anomaly Thresholds
-SYNC_ANOMALY_THRESHOLD = float(os.getenv("ARGOS_SYNC_THRESHOLD", "0.75"))
-HIGH_RISK_SYNC_THRESHOLD = float(os.getenv("ARGOS_HIGH_RISK_THRESHOLD", "0.60"))
+SYNC_ANOMALY_THRESHOLD = float(os.getenv("ARGOS_SYNC_THRESHOLD", "0.62"))
+HIGH_RISK_SYNC_THRESHOLD = float(os.getenv("ARGOS_HIGH_RISK_THRESHOLD", "0.50"))
+CLASSIFIER_DECISION_THRESHOLD = float(os.getenv("ARGOS_CLASSIFIER_THRESHOLD", "0.50"))
 MIN_ANOMALY_WINDOW_DURATION_SEC = 0.4
 
 # Model Weights Filepaths
@@ -53,7 +54,26 @@ CLASSIFIER_WEIGHTS_PATH = MODELS_DIR / "classifier.pth"
 EMBEDDING_DIM = 256
 CLASSIFIER_INPUT_DIM = 24  # Fused audio-visual and temporal statistics dimension
 
+# Centralized Forensic Label Definitions
+LABEL_REAL = 0
+LABEL_FAKE = 1
+CLASS_NAMES = ["REAL", "POTENTIALLY MANIPULATED"]
+LABEL_MAP = {
+    LABEL_REAL: "REAL",
+    LABEL_FAKE: "POTENTIALLY MANIPULATED",
+}
+
+# Forensic Reproducibility & Model Versioning
+MODEL_NAME = "ARGOS-Multimodal-LipSync-Detector"
+MODEL_VERSION = "1.2.0"
+PIPELINE_VERSION = "1.2.0"
+PREPROCESSING_VERSION = "1.2.0"
+FEATURE_VERSION = "24-dim-temporal-v1"
+THRESHOLD_VERSION = "v1.2-calibrated"
+WEIGHTS_VERSION = "syncnet-infonce-v1.2_classifier-mlp-v1.2"
+
 # Execution Device
 import torch
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEVICE_NAME = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU (Multi-Threaded)"
+

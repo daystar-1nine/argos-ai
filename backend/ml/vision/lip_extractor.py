@@ -32,77 +32,126 @@ class LipExtractor:
             alt_path = cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"
             self.face_cascade = cv2.CascadeClassifier(alt_path)
 
-    def detect_primary_face(self, frame_rgb: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
-        """
-        Detects primary face bounding box (x, y, w, h) in RGB frame.
-        Picks the largest face detected if multiple are present.
-        """
+    def detect_all_faces(self, frame_rgb: np.ndarray) -> List[Tuple[int, int, int, int]]:
+        """Detects all candidate face bounding boxes in an RGB frame."""
         gray = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2GRAY)
-        # Equalize histogram for contrast invariance
         gray = cv2.equalizeHist(gray)
-        
         faces = self.face_cascade.detectMultiScale(
             gray,
-            scaleFactor=1.15,
+            scaleFactor=1.12,
             minNeighbors=4,
-            minSize=(60, 60),
+            minSize=(80, 80),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
+        return [(int(x), int(y), int(w), int(h)) for (x, y, w, h) in faces]
 
-        if len(faces) == 0:
+    def detect_primary_face(self, frame_rgb: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
+        """Detects largest candidate face bounding box in RGB frame."""
+        faces = self.detect_all_faces(frame_rgb)
+        if not faces:
+            return None
+        # Sort by area descending
+        faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
+        return faces[0]
+
+    def establish_dominant_face_anchor(
+        self,
+        frames_rgb: List[np.ndarray],
+        max_samples: int = 40
+    ) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Samples frames across the video to establish the stable spatial cluster (anchor)
+        of the primary speaker's head, filtering out transient torso/clothing false positives.
+        """
+        n = len(frames_rgb)
+        step = max(1, n // max_samples)
+        candidates = []
+        h_frame, w_frame = frames_rgb[0].shape[:2]
+
+        for i in range(0, n, step):
+            boxes = self.detect_all_faces(frames_rgb[i])
+            for b in boxes:
+                # Human speaker head is typically in upper 75% of frame with reasonable size
+                cy = b[1] + b[3] / 2.0
+                if cy < h_frame * 0.75 and b[2] >= min(w_frame, h_frame) * 0.10:
+                    candidates.append(b)
+
+        if not candidates:
             return None
 
-        # Sort by area (w * h) descending to get primary speaker
-        faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
-        x, y, w, h = faces[0]
-        return int(x), int(y), int(w), int(h)
+        # Robust median of upper candidate cluster
+        med_x = int(np.median([b[0] for b in candidates]))
+        med_y = int(np.median([b[1] for b in candidates]))
+        med_w = int(np.median([b[2] for b in candidates]))
+        med_h = int(np.median([b[3] for b in candidates]))
+        return (med_x, med_y, med_w, med_h)
 
     def smooth_face_boxes(
         self, 
         raw_boxes: List[Optional[Tuple[int, int, int, int]]], 
-        frame_shape: Tuple[int, int]
+        frame_shape: Tuple[int, int],
+        anchor_box: Optional[Tuple[int, int, int, int]] = None,
     ) -> List[Tuple[int, int, int, int]]:
         """
         Interpolates missing detections and applies temporal exponential smoothing.
-        Prevents jitter and handles transient occlusion.
+        Anchored to primary speaker trajectory to reject teleporting outliers.
         """
         n = len(raw_boxes)
         if n == 0:
             return []
 
-        # Find first valid box
-        first_valid_idx = None
-        for i, box in enumerate(raw_boxes):
-            if box is not None:
-                first_valid_idx = i
-                break
+        h_frame, w_frame = frame_shape[:2]
 
-        if first_valid_idx is None:
-            # Fall back to centered bounding box if no face was found
-            h_frame, w_frame = frame_shape[:2]
-            cx, cy = w_frame // 2, h_frame // 2
-            size = min(w_frame, h_frame) // 2
-            default_box = (cx - size // 2, cy - size // 2, size, size)
-            return [default_box] * n
+        # Determine reference anchor
+        if anchor_box is None:
+            first_valid = next((b for b in raw_boxes if b is not None), None)
+            if first_valid is not None:
+                anchor_box = first_valid
+            else:
+                cx, cy = w_frame // 2, int(h_frame * 0.35)
+                sz = min(w_frame, h_frame) // 3
+                anchor_box = (cx - sz // 2, cy - sz // 2, sz, sz)
 
-        # Fill backwards
-        filled_boxes: List[Tuple[int, int, int, int]] = [raw_boxes[first_valid_idx]] * first_valid_idx
+        ax, ay, aw, ah = anchor_box
+        acx, acy = ax + aw / 2.0, ay + ah / 2.0
+        max_dist = max(w_frame, h_frame) * 0.30
 
-        # Fill forward with interpolation
-        last_box = raw_boxes[first_valid_idx]
-        for i in range(first_valid_idx, n):
-            if raw_boxes[i] is not None:
-                last_box = raw_boxes[i]
-            filled_boxes.append(last_box)
+        # Filter out wild outliers from raw_boxes
+        filtered_boxes: List[Optional[Tuple[int, int, int, int]]] = []
+        for b in raw_boxes:
+            if b is None:
+                filtered_boxes.append(None)
+            else:
+                bcx = b[0] + b[2] / 2.0
+                bcy = b[1] + b[3] / 2.0
+                dist = np.sqrt((bcx - acx) ** 2 + (bcy - acy) ** 2)
+                # Check distance and size consistency with anchor
+                size_ratio = (b[2] * b[3]) / max(1.0, float(aw * ah))
+                if dist <= max_dist and 0.4 <= size_ratio <= 2.5:
+                    filtered_boxes.append(b)
+                else:
+                    filtered_boxes.append(None)
 
-        # Apply temporal moving average smoothing (window = 5)
+        # Forward fill and EMA smooth
+        filled_boxes: List[Tuple[int, int, int, int]] = []
+        current_box = anchor_box
+        for b in filtered_boxes:
+            if b is not None:
+                # Exponential moving average
+                cur_x = int(0.75 * current_box[0] + 0.25 * b[0])
+                cur_y = int(0.75 * current_box[1] + 0.25 * b[1])
+                cur_w = int(0.75 * current_box[2] + 0.25 * b[2])
+                cur_h = int(0.75 * current_box[3] + 0.25 * b[3])
+                current_box = (cur_x, cur_y, cur_w, cur_h)
+            filled_boxes.append(current_box)
+
+        # Apply a temporal bidirectional window smooth
         smoothed_boxes: List[Tuple[int, int, int, int]] = []
-        smooth_window = 5
+        smooth_window = 7
         for i in range(n):
-            start_idx = max(0, i - smooth_window // 2)
-            end_idx = min(n, i + smooth_window // 2 + 1)
-            window_slice = filled_boxes[start_idx:end_idx]
-
+            s_idx = max(0, i - smooth_window // 2)
+            e_idx = min(n, i + smooth_window // 2 + 1)
+            window_slice = filled_boxes[s_idx:e_idx]
             avg_x = int(np.mean([b[0] for b in window_slice]))
             avg_y = int(np.mean([b[1] for b in window_slice]))
             avg_w = int(np.mean([b[2] for b in window_slice]))
@@ -163,14 +212,15 @@ class LipExtractor:
             raise ValueError("Empty frame list supplied to lip extractor.")
 
         frame_shape = frames_rgb[0].shape
+        anchor_box = self.establish_dominant_face_anchor(frames_rgb)
         raw_boxes = [self.detect_primary_face(frame) for frame in frames_rgb]
 
         # Check face detection presence
         detected_count = sum(1 for b in raw_boxes if b is not None)
         face_detection_ratio = detected_count / len(frames_rgb)
 
-        # Smooth trajectories across temporal sequence
-        smooth_boxes = self.smooth_face_boxes(raw_boxes, frame_shape)
+        # Smooth trajectories across temporal sequence anchored to dominant speaker
+        smooth_boxes = self.smooth_face_boxes(raw_boxes, frame_shape, anchor_box=anchor_box)
 
         # Extract normalized lip crops
         lip_crops: List[np.ndarray] = []

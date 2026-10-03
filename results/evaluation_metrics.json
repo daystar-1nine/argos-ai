@@ -1,18 +1,165 @@
 {
-  "total_tested": 6,
-  "accuracy": 1.0,
-  "precision": 1.0,
-  "recall": 1.0,
-  "f1_score": 1.0,
-  "roc_auc": 1.0,
-  "confusion_matrix": [
-    [
-      3,
-      0
-    ],
-    [
-      0,
-      3
+  "metrics": {
+    "total_tested": 6,
+    "accuracy": 0.8333,
+    "precision": 0.75,
+    "recall": 1.0,
+    "f1_score": 0.8571,
+    "roc_auc": 0.7778,
+    "confusion_matrix": [
+      [
+        2,
+        1
+      ],
+      [
+        0,
+        3
+      ]
     ]
+  },
+  "confusion_matrix": {
+    "true_negatives": 2,
+    "false_positives": 1,
+    "false_negatives": 0,
+    "true_positives": 3
+  },
+  "false_positives": [
+    {
+      "video": "real_03_segment_b.mp4",
+      "ground_truth": "real",
+      "status": "completed",
+      "prediction": "POTENTIALLY MANIPULATED",
+      "confidence": 0.788,
+      "real_probability": 0.212,
+      "fake_probability": 0.788,
+      "sync_score": 0.61,
+      "processing_time": 3.9,
+      "suspicious_windows": 3
+    }
+  ],
+  "false_negatives": [],
+  "error_cases": [
+    {
+      "video": "real_04_segment_c.mp4",
+      "ground_truth": "real",
+      "status": "invalid",
+      "prediction": "INVALID_MEDIA",
+      "confidence": 0.0,
+      "real_probability": 0.0,
+      "fake_probability": 0.0,
+      "sync_score": 0.0,
+      "processing_time": 0.0,
+      "suspicious_windows": 0
+    },
+    {
+      "video": "fake_04_mismatched_audio.mp4",
+      "ground_truth": "fake",
+      "status": "unavailable",
+      "prediction": "AV_SYNC_ANALYSIS_UNAVAILABLE",
+      "confidence": 0.0,
+      "real_probability": 0.0,
+      "fake_probability": 0.0,
+      "sync_score": 0.0,
+      "processing_time": 0.0,
+      "suspicious_windows": 0
+    }
+  ],
+  "per_video_predictions": [
+    {
+      "video": "real_01_full.mp4",
+      "ground_truth": "real",
+      "status": "completed",
+      "prediction": "REAL",
+      "confidence": 0.8716,
+      "real_probability": 0.8716,
+      "fake_probability": 0.1284,
+      "sync_score": 0.791,
+      "processing_time": 10.81,
+      "suspicious_windows": 0
+    },
+    {
+      "video": "real_02_segment_a.mp4",
+      "ground_truth": "real",
+      "status": "completed",
+      "prediction": "REAL",
+      "confidence": 0.7524,
+      "real_probability": 0.7524,
+      "fake_probability": 0.2476,
+      "sync_score": 0.758,
+      "processing_time": 5.95,
+      "suspicious_windows": 0
+    },
+    {
+      "video": "real_03_segment_b.mp4",
+      "ground_truth": "real",
+      "status": "completed",
+      "prediction": "POTENTIALLY MANIPULATED",
+      "confidence": 0.788,
+      "real_probability": 0.212,
+      "fake_probability": 0.788,
+      "sync_score": 0.61,
+      "processing_time": 3.9,
+      "suspicious_windows": 3
+    },
+    {
+      "video": "real_04_segment_c.mp4",
+      "ground_truth": "real",
+      "status": "invalid",
+      "prediction": "INVALID_MEDIA",
+      "confidence": 0.0,
+      "real_probability": 0.0,
+      "fake_probability": 0.0,
+      "sync_score": 0.0,
+      "processing_time": 0.0,
+      "suspicious_windows": 0
+    },
+    {
+      "video": "fake_01_delay_400ms.mp4",
+      "ground_truth": "fake",
+      "status": "completed",
+      "prediction": "POTENTIALLY MANIPULATED",
+      "confidence": 0.6974,
+      "real_probability": 0.3026,
+      "fake_probability": 0.6974,
+      "sync_score": 0.719,
+      "processing_time": 5.9,
+      "suspicious_windows": 3
+    },
+    {
+      "video": "fake_02_delay_600ms.mp4",
+      "ground_truth": "fake",
+      "status": "completed",
+      "prediction": "POTENTIALLY MANIPULATED",
+      "confidence": 0.808,
+      "real_probability": 0.192,
+      "fake_probability": 0.808,
+      "sync_score": 0.583,
+      "processing_time": 3.89,
+      "suspicious_windows": 3
+    },
+    {
+      "video": "fake_03_advance_400ms.mp4",
+      "ground_truth": "fake",
+      "status": "completed",
+      "prediction": "POTENTIALLY MANIPULATED",
+      "confidence": 0.7013,
+      "real_probability": 0.2987,
+      "fake_probability": 0.7013,
+      "sync_score": 0.693,
+      "processing_time": 5.95,
+      "suspicious_windows": 3
+    },
+    {
+      "video": "fake_04_mismatched_audio.mp4",
+      "ground_truth": "fake",
+      "status": "unavailable",
+      "prediction": "AV_SYNC_ANALYSIS_UNAVAILABLE",
+      "confidence": 0.0,
+      "real_probability": 0.0,
+      "fake_probability": 0.0,
+      "sync_score": 0.0,
+      "processing_time": 0.0,
+      "suspicious_windows": 0
+    }
   ]
 }

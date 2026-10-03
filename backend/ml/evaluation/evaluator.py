@@ -26,6 +26,13 @@ from ml.config import (
     HIGH_RISK_SYNC_THRESHOLD,
     SYNCNET_WEIGHTS_PATH,
     CLASSIFIER_WEIGHTS_PATH,
+    MODEL_NAME,
+    MODEL_VERSION,
+    PIPELINE_VERSION,
+    WEIGHTS_VERSION,
+    LABEL_REAL,
+    LABEL_FAKE,
+    LABEL_MAP,
 )
 from ml.preprocessing.video_processor import (
     get_video_metadata,
@@ -45,11 +52,6 @@ from ml.models.classifier import load_classifier_model, classify_temporal_featur
 from ml.evidence.evidence_generator import EvidenceGenerator
 
 SUPPORTED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".webm", ".mkv"}
-
-PIPELINE_VERSION = "1.0.0"
-MODEL_NAME = "ARGOS-AV-Detector"
-MODEL_VERSION = "1.0.0"
-WEIGHTS_VERSION = "syncnet-v1.0-classifier-v1.0"
 
 
 class VideoEvaluator:

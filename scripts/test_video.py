@@ -128,85 +128,68 @@ def main():
             print("-" * 60)
             return
 
-    if status in ["invalid", "error", "failed"]:
-        print("\n" + "-" * 60)
-        print(result.get("error_type", "ANALYSIS FAILED"))
-        print("-" * 60)
-        print(result.get("message", "Video could not be processed."))
-        print("-" * 60)
+    if status in ["invalid", "error", "failed", "unavailable"]:
+        print("\n" + "=" * 60)
+        print("ARGOS AI — ML TEST")
+        print("=" * 60)
+        print(f"\nVideo:          {video_path.name}")
+        print(f"Path:           {video_path}")
+        print("\nSTATUS:\nFAILED")
+        print(f"Stage:          {result.get('stage', result.get('error_type', 'preprocessing'))}")
+        print(f"Error:          {result.get('message', 'Video could not be processed.')}")
+        if result.get("details"):
+            print(f"Details:        {result.get('details')}")
+        print("=" * 60 + "\n")
         return
 
-    # Print Formatted Results
+    # Print Formatted Results matching Section 16
     meta = result["metadata"]
     model = result["model"]
     proc = result["processing"]
     timings = proc.get("timings", {})
-
-    print("\n" + "-" * 60)
-    print("ARGOS AI FORENSIC TEST")
-    print("-" * 60)
-    print("\nVIDEO")
-    print(result["video"])
-    print(f"\nDuration:   {meta['duration_sec']:.1f} sec")
-    print(f"FPS:        {meta['fps']}")
-    print(f"Resolution: {meta['resolution']}")
-    print(f"\nAudio:      {meta['audio']}")
-    print(f"Face:       {meta['face']}")
-
-    print("\nMODEL")
-    print(f"Device:     {model['device']}")
-    print(f"Model:      {model['model_name']} (v{model['model_version']})")
-    print(f"Weights:    {model['weights_version']}")
-    print(f"Pipeline:   v{model['pipeline_version']}")
-
-    print("\nRESULT")
-    print("-" * 60)
-    print(f"Prediction:        {result['verdict']}")
-    print(f"Confidence:        {result['confidence_pct']}%")
-    print(f"Real Probability:  {result['real_probability'] * 100:.1f}%")
-    print(f"Fake Probability:  {result['fake_probability'] * 100:.1f}%")
-    print(f"AV Sync Score:     {result['sync_score']:.2f}")
-    print(f"Visual Score:      {result['visual_score']}%")
-    print(f"Audio Score:       {result['audio_score']}%")
-    print(f"Temporal Mismatch: {result['temporal_mismatch_ms']}")
-
-    # Suspicious Windows
     suspicious = result.get("suspicious_windows", [])
-    print("\nSuspicious Windows:")
+    evidence = result.get("evidence_frames", [])
+
+    print("\n" + "=" * 60)
+    print("ARGOS AI — ML TEST")
+    print("=" * 60)
+
+    print(f"\nVideo:          {result['video']}")
+    print(f"Duration:       {meta['duration_sec']:.2f}s")
+    print(f"Resolution:     {meta['resolution']}")
+    print(f"FPS:            {meta['fps']:.2f}")
+    print(f"Audio:          {meta['audio']}")
+    print(f"Faces detected: {result.get('analysis', {}).get('faces_count', 1)}")
+
+    print("\nMODEL:")
+    print(f"Version:        {model.get('model_version', '1.2.0')}")
+    print(f"Checkpoint:     {model.get('checkpoint', 'backend/models/classifier.pth')}")
+
+    print("\nRESULT:")
+    print(f"Prediction:       {result['verdict']}")
+    print(f"Real probability: {result['real_probability'] * 100:.2f}%")
+    print(f"Fake probability: {result['fake_probability'] * 100:.2f}%")
+
+    print("\nAUDIO-VISUAL:")
+    print(f"Sync score:        {result['sync_score']:.3f}")
+    print(f"Average AV offset: {result['temporal_mismatch_ms']}")
+
+    print("\nTEMPORAL:")
+    print(f"Windows analyzed:   {result.get('analysis', {}).get('total_windows', len(result.get('windows', [])))}")
+    print(f"Suspicious windows: {len(suspicious)}")
     if suspicious:
         for win in suspicious:
-            print(f"  {win['start_timecode']} -> {win['end_timecode']}  (Sync: {win['sync_score']:.2f}, Severity: {win['severity']})")
-    else:
-        print("  None detected (continuous temporal synchronization verified)")
+            print(f"  - {win.get('start_timecode', '')} -> {win.get('end_timecode', '')} (Sync: {win.get('sync_score', 0):.2f}, Severity: {win.get('severity', 'HIGH')})")
 
-    # Evidence Frames
-    evidence = result.get("evidence_frames", [])
-    print("\nEvidence Frames:")
+    print("\nEVIDENCE:")
     if evidence:
         for ev in evidence:
-            print(f"  Frame {ev['frame_number']:04d} @ {ev['timestamp']} (Sync: {ev['sync_score']:.2f}, {ev['severity']}) → {ev['file_path']}")
+            print(f"  - Exhibit: Frame {ev.get('frame_number', 0)} @ {ev.get('timestamp', '')} -> {ev.get('file_path', '')}")
     else:
-        print("  No anomaly exhibits generated")
+        print("  None (Continuous authentic synchronization verified)")
 
-    # Timings
-    print("\nPERFORMANCE BREAKDOWN")
-    print(f"  Preprocessing: {timings.get('preprocessing', 0.0):.2f}s")
-    print(f"  Vision:        {timings.get('vision', 0.0):.2f}s")
-    print(f"  Audio:         {timings.get('audio', 0.0):.2f}s")
-    print(f"  AV Sync:       {timings.get('av_sync', 0.0):.2f}s")
-    print(f"  Classifier:    {timings.get('classifier', 0.0):.2f}s")
-    print(f"  Evidence:      {timings.get('evidence', 0.0):.2f}s")
-    print(f"  Total:         {proc.get('duration_seconds', 0.0):.2f}s")
-
-    # Saved artifacts
-    print("\nOUTPUT ARTIFACTS")
-    print(f"  Results JSON:  {result.get('result_json_path')}")
-    print(f"  Timeline CSV:  {result.get('timeline_csv')}")
-    if args.debug and result.get("debug"):
-        dbg = result["debug"]
-        print(f"  Sync Plot:     {dbg.get('sync_plot')}")
-        print(f"  Mel Plot:      {dbg.get('mel_plot')}")
-    print("-" * 60 + "\n")
+    print("\nSTATUS:\nSUCCESS")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":

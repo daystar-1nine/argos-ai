@@ -12,8 +12,40 @@ import torch.nn.functional as F
 from ml.config import (
     CLASSIFIER_INPUT_DIM,
     CLASSIFIER_WEIGHTS_PATH,
+    CLASSIFIER_DECISION_THRESHOLD,
+    LABEL_REAL,
+    LABEL_FAKE,
+    LABEL_MAP,
+    CLASS_NAMES,
     DEVICE,
 )
+
+FEATURE_NAMES = [
+    "mean_sync",
+    "std_sync",
+    "min_sync",
+    "p10_sync",
+    "p25_sync",
+    "p50_sync",
+    "anomaly_ratio",
+    "high_risk_ratio",
+    "max_run_ratio",
+    "num_intervals",
+    "motion_mean",
+    "motion_std",
+    "motion_max",
+    "energy_mean",
+    "energy_std",
+    "max_xcorr",
+    "lag_at_max",
+    "start_sync",
+    "end_sync",
+    "p75_sync",
+    "p90_sync",
+    "max_sync",
+    "anom_count",
+    "total_windows",
+]
 
 
 class MultimodalDeepfakeClassifier(nn.Module):
@@ -102,24 +134,29 @@ def classify_temporal_features(
     else:
         tensor_x = feature_vector.to(device)
 
-    # Predict probabilities via Softmax
+    # Predict probabilities via Softmax with gradients explicitly disabled
     probs = model.predict_proba(tensor_x)[0]
-    real_prob = float(probs[0].item())
-    fake_prob = float(probs[1].item())
+    real_prob = float(probs[LABEL_REAL].item())
+    fake_prob = float(probs[LABEL_FAKE].item())
 
-    # Decision rule
-    if fake_prob >= 0.50:
-        verdict = "POTENTIALLY MANIPULATED"
+    # Centralized decision rule using configured threshold
+    threshold = CLASSIFIER_DECISION_THRESHOLD
+    if fake_prob >= threshold:
+        predicted_class = LABEL_FAKE
         confidence = fake_prob
     else:
-        verdict = "REAL"
+        predicted_class = LABEL_REAL
         confidence = real_prob
 
+    verdict = LABEL_MAP[predicted_class]
+
     return {
+        "predicted_class": predicted_class,
         "verdict": verdict,
         "confidence": round(confidence, 4),
         "confidence_pct": round(confidence * 100.0, 1),
         "real_probability": round(real_prob, 4),
         "fake_probability": round(fake_prob, 4),
+        "threshold_used": threshold,
         "logits": model.forward(tensor_x)[0].tolist(),
     }

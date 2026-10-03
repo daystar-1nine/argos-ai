@@ -28,40 +28,40 @@ from ml.training.dataset import DeepfakeFeatureDataset
 from ml.training.train import train_classifier
 
 
-def generate_synthetic_benchmark_dataset(num_samples: int = 240):
+def generate_synthetic_benchmark_dataset(num_samples: int = 400):
     """
     Generates representative multimodal forensic feature vectors modeling:
-    - REAL: High continuous sync scores (mean ~0.82-0.92), low anomaly ratio (<0.08), high AV cross-correlation (0.7-0.9)
-    - FAKE: Low/dropped sync scores (mean ~0.35-0.52), frequent dips, high desync run-lengths, low cross-correlation (0.1-0.4)
+    - REAL (Authentic): Synchronized natural speech with pauses (mean sync ~0.70-0.88, VAD anomaly ratio <0.14, low lag within +/-1.5 frames, xcorr 0.55-0.92)
+    - FAKE (Deepfake/Manipulated): Acoustic-visual phase lag (offset +/-4 to +/-12 frames), synthetic lip desync, dropped correlation (mean sync ~0.35-0.65, anomaly ratio >0.30, low xcorr <0.40)
     """
     np.random.seed(42)
     samples = []
 
     for _ in range(num_samples // 2):
         # 1. Authentic Media (REAL) Feature Vector (24 dimensions)
-        mean_s = np.random.uniform(0.78, 0.94)
-        std_s = np.random.uniform(0.04, 0.10)
-        min_s = mean_s - np.random.uniform(0.10, 0.20)
-        p10_s = mean_s - np.random.uniform(0.06, 0.12)
-        p25_s = mean_s - np.random.uniform(0.03, 0.08)
+        mean_s = np.random.uniform(0.76, 0.90)
+        std_s = np.random.uniform(0.02, 0.06)
+        min_s = mean_s - np.random.uniform(0.06, 0.12)
+        p10_s = mean_s - np.random.uniform(0.03, 0.06)
+        p25_s = mean_s - np.random.uniform(0.01, 0.04)
         p50_s = mean_s
-        anomaly_ratio = np.random.uniform(0.0, 0.08)
+        total_w = np.random.uniform(8.0, 120.0)
+        anomaly_ratio = np.random.uniform(0.0, 0.02)
         high_risk_ratio = 0.0
-        max_run_ratio = np.random.uniform(0.0, 0.05)
-        num_intervals = float(np.random.choice([0, 0, 0, 1]))
-        motion_mean = np.random.uniform(0.04, 0.12)
-        motion_std = np.random.uniform(0.01, 0.04)
-        motion_max = motion_mean + np.random.uniform(0.05, 0.12)
-        energy_mean = np.random.uniform(0.08, 0.25)
+        max_run_ratio = np.random.uniform(0.0, 0.02)
+        num_intervals = float(np.random.choice([0.0, 0.0, 0.0, 1.0]))
+        motion_mean = np.random.uniform(0.02, 0.12)
+        motion_std = np.random.uniform(0.01, 0.05)
+        motion_max = motion_mean + np.random.uniform(0.05, 0.18)
+        energy_mean = np.random.uniform(0.06, 0.22)
         energy_std = np.random.uniform(0.02, 0.08)
-        xcorr = np.random.uniform(0.72, 0.94)
-        lag = np.random.uniform(-1.0, 1.0)
-        start_s = mean_s + np.random.normal(0, 0.03)
-        end_s = mean_s + np.random.normal(0, 0.03)
-        p75_s = mean_s + np.random.uniform(0.02, 0.06)
-        p90_s = mean_s + np.random.uniform(0.04, 0.08)
+        xcorr = np.random.uniform(0.60, 0.92)
+        lag = np.random.uniform(-1.0, 1.0)  # Natural physiological lag within +/-40ms
+        start_s = mean_s + np.random.normal(0, 0.02)
+        end_s = mean_s + np.random.normal(0, 0.02)
+        p75_s = mean_s + np.random.uniform(0.01, 0.04)
+        p90_s = mean_s + np.random.uniform(0.02, 0.06)
         max_s = min(1.0, mean_s + np.random.uniform(0.05, 0.12))
-        total_w = np.random.uniform(6.0, 60.0)
         anom_count = float(int(anomaly_ratio * total_w))
 
         real_vec = np.array([
@@ -73,29 +73,40 @@ def generate_synthetic_benchmark_dataset(num_samples: int = 240):
         samples.append((real_vec, 0))  # Class 0 = REAL
 
         # 2. Manipulated / Lip-Sync Desynced Media (FAKE) Feature Vector
-        fake_mean_s = np.random.uniform(0.40, 0.72)
-        fake_std_s = np.random.uniform(0.12, 0.28)
-        fake_min_s = np.random.uniform(0.15, 0.48)
-        fake_p10_s = np.random.uniform(0.20, 0.52)
-        fake_p25_s = np.random.uniform(0.25, 0.58)
+        # Supports both severe deepfakes and subtle temporal desynchronization (200-500ms shifts)
+        is_subtle_desync = np.random.rand() > 0.5
+        if is_subtle_desync:
+            fake_mean_s = np.random.uniform(0.62, 0.74)
+            fake_min_s = np.random.uniform(0.40, 0.52)
+            fake_high_risk_ratio = np.random.uniform(0.02, 0.12)
+            fake_anomaly_ratio = np.random.uniform(0.05, 0.22)
+            fake_num_intervals = float(np.random.randint(2, 6))
+            fake_lag = float(np.random.choice([-6.0, -5.0, -4.0, -3.0, 3.0, 4.0, 5.0, 6.0]))
+        else:
+            fake_mean_s = np.random.uniform(0.35, 0.62)
+            fake_min_s = np.random.uniform(0.15, 0.42)
+            fake_high_risk_ratio = np.random.uniform(0.10, 0.50)
+            fake_anomaly_ratio = np.random.uniform(0.20, 0.85)
+            fake_num_intervals = float(np.random.randint(3, max(5, int(total_w * 0.15) + 1)))
+            fake_lag = float(np.random.choice([-10.0, -8.0, -7.0, 7.0, 8.0, 10.0]))
+
+        fake_std_s = np.random.uniform(0.06, 0.22)
+        fake_p10_s = fake_mean_s - np.random.uniform(0.10, 0.25)
+        fake_p25_s = fake_mean_s - np.random.uniform(0.05, 0.15)
         fake_p50_s = fake_mean_s
-        fake_anomaly_ratio = np.random.uniform(0.42, 0.95)
-        fake_high_risk_ratio = np.random.uniform(0.0, 0.50)
-        fake_max_run_ratio = np.random.uniform(0.25, 0.75)
-        fake_num_intervals = float(np.random.choice([1, 2, 3, 4]))
-        fake_motion_mean = np.random.uniform(0.05, 0.18)
-        fake_motion_std = np.random.uniform(0.03, 0.08)
-        fake_motion_max = fake_motion_mean + np.random.uniform(0.08, 0.20)
-        fake_energy_mean = np.random.uniform(0.06, 0.22)
-        fake_energy_std = np.random.uniform(0.02, 0.07)
-        fake_xcorr = np.random.uniform(0.08, 0.42)
-        fake_lag = float(np.random.choice([-8.0, -6.0, 6.0, 8.0, 10.0]))  # Temporal desync offset
-        fake_start_s = fake_mean_s + np.random.normal(0, 0.05)
-        fake_end_s = fake_mean_s + np.random.normal(0, 0.05)
-        fake_p75_s = fake_mean_s + np.random.uniform(0.06, 0.14)
-        fake_p90_s = fake_mean_s + np.random.uniform(0.10, 0.20)
-        fake_max_s = min(1.0, fake_mean_s + np.random.uniform(0.15, 0.30))
         fake_total_w = total_w
+        fake_max_run_ratio = np.random.uniform(0.08, 0.60)
+        fake_motion_mean = np.random.uniform(0.03, 0.16)
+        fake_motion_std = np.random.uniform(0.02, 0.08)
+        fake_motion_max = fake_motion_mean + np.random.uniform(0.06, 0.20)
+        fake_energy_mean = np.random.uniform(0.05, 0.20)
+        fake_energy_std = np.random.uniform(0.02, 0.07)
+        fake_xcorr = np.random.uniform(0.05, 0.45)
+        fake_start_s = fake_mean_s + np.random.normal(0, 0.04)
+        fake_end_s = fake_mean_s + np.random.normal(0, 0.04)
+        fake_p75_s = fake_mean_s + np.random.uniform(0.03, 0.10)
+        fake_p90_s = fake_mean_s + np.random.uniform(0.06, 0.16)
+        fake_max_s = min(1.0, fake_mean_s + np.random.uniform(0.08, 0.22))
         fake_anom_count = float(int(fake_anomaly_ratio * fake_total_w))
 
         fake_vec = np.array([

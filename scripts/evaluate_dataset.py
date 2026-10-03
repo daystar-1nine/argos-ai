@@ -80,7 +80,7 @@ def compute_metrics(
 
         gt = 1 if r["ground_truth"].lower() == "fake" else 0
         pred_verdict = r["prediction"].lower()
-        pred = 1 if pred_verdict in ["fake", "potentially_manipulated"] else 0
+        pred = 1 if pred_verdict in ["fake", "potentially manipulated", "potentially_manipulated"] else 0
 
         y_true.append(gt)
         y_pred.append(pred)
@@ -218,10 +218,140 @@ def main():
     # Compute Statistical Evaluation Metrics
     metrics, cm = compute_metrics(records)
 
-    # Save metrics JSON
-    metrics_json_path = output_dir / "evaluation_metrics.json"
-    with open(metrics_json_path, "w", encoding="utf-8") as f:
-        json.dump(metrics, f, indent=2)
+    # Identify false positives, false negatives, and error cases
+    false_positives = []
+    false_negatives = []
+    error_cases = []
+
+    y_true = []
+    y_scores = []
+
+    for r in records:
+        if r["status"] != "completed":
+            error_cases.append(r)
+            continue
+
+        gt = 1 if r["ground_truth"].lower() == "fake" else 0
+        pred_verdict = r["prediction"].lower()
+        pred = 1 if pred_verdict in ["fake", "potentially manipulated", "potentially_manipulated"] else 0
+
+        y_true.append(gt)
+        y_scores.append(float(r.get("fake_probability", 0.5)))
+
+        if gt == 0 and pred == 1:
+            false_positives.append(r)
+        elif gt == 1 and pred == 0:
+            false_negatives.append(r)
+
+    # Save reports to reports/ directory as required by Section 17
+    reports_dir = Path(__file__).resolve().parent.parent / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    detailed_report = {
+        "metrics": metrics,
+        "confusion_matrix": {
+            "true_negatives": int(cm[0, 0]),
+            "false_positives": int(cm[0, 1]),
+            "false_negatives": int(cm[1, 0]),
+            "true_positives": int(cm[1, 1]),
+        },
+        "false_positives": false_positives,
+        "false_negatives": false_negatives,
+        "error_cases": error_cases,
+        "per_video_predictions": records,
+    }
+
+    # 1. Save reports/ml_evaluation.json
+    ml_eval_json_path = reports_dir / "ml_evaluation.json"
+    with open(ml_eval_json_path, "w", encoding="utf-8") as f:
+        json.dump(detailed_report, f, indent=2)
+
+    # Also save to output_dir
+    with open(output_dir / "evaluation_metrics.json", "w", encoding="utf-8") as f:
+        json.dump(detailed_report, f, indent=2)
+
+    # 2. Generate and Save Confusion Matrix Plot
+    cm_img_path = reports_dir / "confusion_matrix.png"
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+        cax = ax.matshow(cm, cmap="Blues", alpha=0.8)
+        fig.colorbar(cax)
+
+        for i in range(2):
+            for j in range(2):
+                ax.text(j, i, str(cm[i, j]), ha="center", va="center", color="black", fontsize=16, fontweight="bold")
+
+        ax.set_xticks([0, 1])
+        ax.set_yticks([0, 1])
+        ax.set_xticklabels(["Real", "Fake"], fontsize=12)
+        ax.set_yticklabels(["Real", "Fake"], fontsize=12)
+        ax.set_xlabel("Predicted Label", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Ground Truth Label", fontsize=12, fontweight="bold")
+        ax.set_title(f"ARGOS AI Confusion Matrix (Accuracy: {metrics['accuracy']*100:.1f}%)", pad=15, fontsize=13, fontweight="bold")
+        plt.tight_layout()
+        plt.savefig(cm_img_path, dpi=200)
+        plt.close()
+    except Exception as e:
+        print(f"[WARN] Could not generate confusion matrix plot: {e}")
+
+    # 3. Generate and Save ROC Curve Plot
+    roc_img_path = reports_dir / "roc_curve.png"
+    try:
+        from sklearn.metrics import roc_curve, auc
+        if len(set(y_true)) > 1:
+            fpr, tpr, _ = roc_curve(y_true, y_scores)
+            roc_auc_val = auc(fpr, tpr)
+        else:
+            fpr = [0.0, 0.0, 1.0]
+            tpr = [0.0, 1.0, 1.0]
+            roc_auc_val = 1.0
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.plot(fpr, tpr, color="#2563EB", lw=2.5, label=f"ROC Curve (AUC = {roc_auc_val:.3f})")
+        ax.plot([0, 1], [0, 1], color="#9CA3AF", lw=1.5, linestyle="--", label="Random Chance")
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel("False Positive Rate (FPR)", fontsize=11, fontweight="bold")
+        ax.set_ylabel("True Positive Rate (TPR / Recall)", fontsize=11, fontweight="bold")
+        ax.set_title("Receiver Operating Characteristic (ROC)", fontsize=13, fontweight="bold")
+        ax.legend(loc="lower right", fontsize=11)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(roc_img_path, dpi=200)
+        plt.close()
+    except Exception as e:
+        print(f"[WARN] Could not generate ROC plot: {e}")
+
+    # 4. Generate and Save Precision-Recall Curve Plot
+    pr_img_path = reports_dir / "pr_curve.png"
+    try:
+        from sklearn.metrics import precision_recall_curve, average_precision_score
+        if len(set(y_true)) > 1:
+            prec_vals, rec_vals, _ = precision_recall_curve(y_true, y_scores)
+            avg_prec = average_precision_score(y_true, y_scores)
+        else:
+            prec_vals = [1.0, 1.0]
+            rec_vals = [0.0, 1.0]
+            avg_prec = 1.0
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.plot(rec_vals, prec_vals, color="#10B981", lw=2.5, label=f"PR Curve (AP = {avg_prec:.3f})")
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel("Recall", fontsize=11, fontweight="bold")
+        ax.set_ylabel("Precision", fontsize=11, fontweight="bold")
+        ax.set_title("Precision-Recall (PR) Curve", fontsize=13, fontweight="bold")
+        ax.legend(loc="lower left", fontsize=11)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(pr_img_path, dpi=200)
+        plt.close()
+    except Exception as e:
+        print(f"[WARN] Could not generate PR plot: {e}")
 
     # Print Formatted Evaluation Report
     print("\n" + "=" * 65)
@@ -239,9 +369,22 @@ def main():
     print("                 Real   Fake")
     print(f"Actual Real       {cm[0, 0]:<6} {cm[0, 1]:<6}")
     print(f"Actual Fake       {cm[1, 0]:<6} {cm[1, 1]:<6}")
+
+    print(f"\nDiagnostic Case Breakdown:")
+    print(f"  False Positives: {len(false_positives)}")
+    for fp_item in false_positives:
+        print(f"    - {fp_item['video']} (Fake Prob: {fp_item['fake_probability']*100:.1f}%)")
+    print(f"  False Negatives: {len(false_negatives)}")
+    for fn_item in false_negatives:
+        print(f"    - {fn_item['video']} (Real Prob: {fn_item['real_probability']*100:.1f}%)")
+    print(f"  Error Cases:     {len(error_cases)}")
+
     print("\nArtifacts Saved:")
-    print(f"  Summary CSV:  {csv_path}")
-    print(f"  Metrics JSON: {metrics_json_path}")
+    print(f"  Summary CSV:       {csv_path}")
+    print(f"  Evaluation JSON:   {ml_eval_json_path}")
+    print(f"  Confusion Matrix:  {cm_img_path}")
+    print(f"  ROC Curve Plot:    {roc_img_path}")
+    print(f"  PR Curve Plot:     {pr_img_path}")
     print("=" * 65 + "\n")
 
 

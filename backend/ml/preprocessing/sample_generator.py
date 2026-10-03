@@ -67,10 +67,12 @@ def create_sample_audiovisual_video(
         audio_samples = []
         for s in range(n_samples):
             t = s / sample_rate
-            # 220Hz carrier with 4Hz envelope matching mouth opening
+            # 220Hz carrier with 4Hz speech envelope modulation
             freq = 220.0
             carrier = np.sin(2 * np.pi * freq * t)
-            modulator = 0.5 * (1.0 + np.sin(2 * np.pi * 4.0 * t))
+            # When anomaly is True, shift acoustic envelope by 180 degrees (0.125s lag at 4Hz) so sound and mouth are completely desynchronized
+            phase_shift = 0.125 if is_anomaly else 0.0
+            modulator = 0.5 * (1.0 + np.sin(2 * np.pi * 4.0 * (t + phase_shift)))
             val = int(carrier * modulator * 18000.0)
             audio_samples.append(struct.pack("<h", max(-32767, min(32767, val))))
 

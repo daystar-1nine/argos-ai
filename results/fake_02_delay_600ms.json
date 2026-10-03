@@ -1,0 +1,108 @@
+{
+  "video": "fake_02_delay_600ms.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\golden\\fake\\fake_02_delay_600ms.mp4",
+  "video_id": "fake_02_delay_600ms",
+  "ground_truth": "fake",
+  "prediction": "potentially manipulated",
+  "verdict": "POTENTIALLY MANIPULATED",
+  "confidence": 0.808,
+  "confidence_pct": 80.8,
+  "real_probability": 0.192,
+  "fake_probability": 0.808,
+  "sync_score": 0.583,
+  "visual_score": 42.4,
+  "audio_score": 48.2,
+  "temporal_mismatch_ms": "+40ms",
+  "suspicious_windows": [
+    {
+      "start": 0.2,
+      "end": 2.01,
+      "start_timecode": "00:00.20",
+      "end_timecode": "00:02.01",
+      "sync_score": 0.469,
+      "severity": "HIGH",
+      "reason": "Temporal Lip-Sync Anomaly (HIGH RISK, Sync=46.9%)"
+    },
+    {
+      "start": 3.2,
+      "end": 4.01,
+      "start_timecode": "00:03.20",
+      "end_timecode": "00:04.01",
+      "sync_score": 0.605,
+      "severity": "MEDIUM",
+      "reason": "Temporal Lip-Sync Anomaly (MEDIUM RISK, Sync=60.5%)"
+    },
+    {
+      "start": 3.6,
+      "end": 5.41,
+      "start_timecode": "00:03.60",
+      "end_timecode": "00:05.41",
+      "sync_score": 0.457,
+      "severity": "HIGH",
+      "reason": "Temporal Lip-Sync Anomaly (HIGH RISK, Sync=45.7%)"
+    }
+  ],
+  "evidence_frames": [
+    {
+      "frame_number": 10,
+      "timestamp": "00:00.40",
+      "timestamp_sec": 0.4,
+      "sync_score": 0.469,
+      "severity": "HIGH",
+      "file_name": "frame_0010.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_02_delay_600ms\\frame_0010.jpg",
+      "url": "/api/test-lab/evidence/fake_02_delay_600ms/frame_0010.jpg"
+    },
+    {
+      "frame_number": 80,
+      "timestamp": "00:03.20",
+      "timestamp_sec": 3.2,
+      "sync_score": 0.605,
+      "severity": "MEDIUM",
+      "file_name": "frame_0080.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_02_delay_600ms\\frame_0080.jpg",
+      "url": "/api/test-lab/evidence/fake_02_delay_600ms/frame_0080.jpg"
+    },
+    {
+      "frame_number": 100,
+      "timestamp": "00:04.00",
+      "timestamp_sec": 4.0,
+      "sync_score": 0.457,
+      "severity": "HIGH",
+      "file_name": "frame_0100.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_02_delay_600ms\\frame_0100.jpg",
+      "url": "/api/test-lab/evidence/fake_02_delay_600ms/frame_0100.jpg"
+    }
+  ],
+  "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\fake_02_delay_600ms_timeline.csv",
+  "metadata": {
+    "duration_sec": 6.366666666666666,
+    "fps": 30.0,
+    "resolution": "1920x1080",
+    "total_frames": 191,
+    "audio": "AVAILABLE",
+    "face": "DETECTED"
+  },
+  "processing": {
+    "device": "CPU (Multi-Threaded)",
+    "duration_seconds": 3.89,
+    "timings": {
+      "preprocessing": 0.93,
+      "vision": 2.049,
+      "audio": 0.01,
+      "av_sync": 0.834,
+      "classifier": 0.001,
+      "evidence": 0.034,
+      "total": 3.89
+    }
+  },
+  "model": {
+    "model_name": "ARGOS-Multimodal-LipSync-Detector",
+    "model_version": "1.2.0",
+    "weights_version": "syncnet-infonce-v1.2_classifier-mlp-v1.2",
+    "pipeline_version": "1.2.0",
+    "device": "CPU (Multi-Threaded)"
+  },
+  "status": "completed",
+  "debug": null
+}

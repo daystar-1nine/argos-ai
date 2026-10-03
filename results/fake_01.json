@@ -1,39 +1,29 @@
 {
   "video": "fake_01.mp4",
-  "video_path": "S:\\Hackathon\\Argos AI\\data\\test\\fake\\fake_01.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\golden\\fake\\fake_01.mp4",
   "video_id": "fake_01",
   "ground_truth": "fake",
-  "prediction": "potentially manipulated",
-  "verdict": "POTENTIALLY MANIPULATED",
-  "confidence": 0.5597,
-  "confidence_pct": 56.0,
-  "real_probability": 0.4403,
-  "fake_probability": 0.5597,
-  "sync_score": 0.69,
+  "prediction": "real",
+  "verdict": "REAL",
+  "confidence": 0.7197,
+  "confidence_pct": 72.0,
+  "real_probability": 0.7197,
+  "fake_probability": 0.2803,
+  "sync_score": 0.832,
   "visual_score": 95.0,
-  "audio_score": 76.9,
-  "temporal_mismatch_ms": "-120ms",
-  "suspicious_windows": [
-    {
-      "start": 0.0,
-      "end": 2.2,
-      "start_timecode": "00:00.00",
-      "end_timecode": "00:02.20",
-      "sync_score": 0.69,
-      "severity": "MEDIUM",
-      "reason": "Temporal Lip-Sync Anomaly (MEDIUM RISK, Sync=69.0%)"
-    }
-  ],
+  "audio_score": 99.2,
+  "temporal_mismatch_ms": "+40ms",
+  "suspicious_windows": [],
   "evidence_frames": [
     {
-      "frame_number": 0,
-      "timestamp": "00:00.00",
-      "timestamp_sec": 0.0,
-      "sync_score": 0.69,
-      "severity": "MEDIUM",
-      "file_name": "frame_0000.jpg",
-      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_01\\frame_0000.jpg",
-      "url": "/api/test-lab/evidence/fake_01/frame_0000.jpg"
+      "frame_number": 10,
+      "timestamp": "00:00.40",
+      "timestamp_sec": 0.4,
+      "sync_score": 0.88,
+      "severity": "NORMAL",
+      "file_name": "frame_0010.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\fake_01\\frame_0010.jpg",
+      "url": "/api/test-lab/evidence/fake_01/frame_0010.jpg"
     }
   ],
   "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\fake_01_timeline.csv",
@@ -47,22 +37,22 @@
   },
   "processing": {
     "device": "CPU (Multi-Threaded)",
-    "duration_seconds": 0.42,
+    "duration_seconds": 0.52,
     "timings": {
-      "preprocessing": 0.096,
-      "vision": 0.105,
-      "audio": 0.004,
-      "av_sync": 0.178,
+      "preprocessing": 0.073,
+      "vision": 0.219,
+      "audio": 0.007,
+      "av_sync": 0.2,
       "classifier": 0.001,
-      "evidence": 0.019,
-      "total": 0.42
+      "evidence": 0.001,
+      "total": 0.52
     }
   },
   "model": {
-    "model_name": "ARGOS-AV-Detector",
-    "model_version": "1.0.0",
-    "weights_version": "syncnet-v1.0-classifier-v1.0",
-    "pipeline_version": "1.0.0",
+    "model_name": "ARGOS-Multimodal-LipSync-Detector",
+    "model_version": "1.2.0",
+    "weights_version": "syncnet-infonce-v1.2_classifier-mlp-v1.2",
+    "pipeline_version": "1.2.0",
     "device": "CPU (Multi-Threaded)"
   },
   "status": "completed",

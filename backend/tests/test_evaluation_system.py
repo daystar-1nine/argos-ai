@@ -10,9 +10,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-# Ensure backend in sys.path
+# Ensure backend and root in sys.path
 backend_path = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(backend_path))
+root_dir = backend_path.parent
+if str(backend_path) not in sys.path:
+    sys.path.insert(0, str(backend_path))
+if str(root_dir) not in sys.path:
+    sys.path.insert(0, str(root_dir))
 
 from app.main import app
 from ml.evaluation.evaluator import VideoEvaluator

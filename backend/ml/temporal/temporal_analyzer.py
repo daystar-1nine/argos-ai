@@ -40,11 +40,22 @@ class SuspiciousInterval:
         return {
             "start": self.start_time,
             "end": self.end_time,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "start_sec": self.start_time,
+            "end_sec": self.end_time,
             "duration": self.duration_sec,
             "sync_score": self.avg_sync_score,
+            "avg_sync_score": self.avg_sync_score,
+            "mean_sync": self.avg_sync_score,
+            "min_sync": self.min_sync_score,
             "min_sync_score": self.min_sync_score,
             "severity": self.severity,
+            "risk_level": self.severity,
             "peak_frame": self.peak_anomaly_frame,
+            "peak_anomaly_frame": self.peak_anomaly_frame,
+            "window_indices": self.window_indices,
+            "reason": f"Lip-sync anomaly: audio-visual correlation dropped to {self.min_sync_score * 100:.1f}%.",
             "label": f"Temporal Lip-Sync Anomaly ({self.severity} RISK, Sync={self.avg_sync_score * 100:.1f}%)",
         }
 
@@ -96,9 +107,15 @@ class TemporalAnalyzer:
         p25_sync = float(np.percentile(scores, 25))
         p50_sync = float(np.median(scores))
 
-        # Count anomalous windows
-        anomalous_mask = scores < self.anomaly_threshold
-        high_risk_mask = scores < self.high_risk_threshold
+        # Voice Activity Detection (VAD) energy gating:
+        # A window is considered an audio-visual desynchronization anomaly only when speech activity
+        # (acoustic formant energy AND visual mouth articulation) is actively underway.
+        # Conversational pauses between phrases are natural and must not be flagged as deepfakes.
+        speech_th = max(0.03, 0.40 * float(np.mean(energies)))
+        motion_th = max(0.012, 0.40 * float(np.mean(motions)))
+        active_speech_mask = (energies > speech_th) & (motions > motion_th)
+        anomalous_mask = (scores < self.anomaly_threshold) & active_speech_mask
+        high_risk_mask = (scores < self.high_risk_threshold) & active_speech_mask
         anomaly_ratio = float(np.mean(anomalous_mask))
         high_risk_ratio = float(np.mean(high_risk_mask))
 
@@ -174,13 +191,17 @@ class TemporalAnalyzer:
                 )
 
         # 3. Construct 24-dimensional fused temporal feature vector for Classifier
-        # Cross-correlation between lip motion velocity and audio RMS energy
+        # Cross-correlation between lip motion velocity and audio RMS energy within physiological window
         if len(motions) > 1 and len(energies) > 1 and np.std(motions) > 1e-6 and np.std(energies) > 1e-6:
             norm_m = (motions - np.mean(motions)) / (np.std(motions) + 1e-6)
             norm_e = (energies - np.mean(energies)) / (np.std(energies) + 1e-6)
             xcorr = np.correlate(norm_m, norm_e, mode="full") / len(motions)
-            max_xcorr = float(np.max(xcorr))
-            lag_at_max = float(np.argmax(xcorr) - len(motions) + 1)
+            center_idx = len(motions) - 1
+            max_lag_search = min(5, len(motions) // 2)  # Search +/- 5 windows (+/- 1.0s)
+            physio_slice = xcorr[center_idx - max_lag_search : center_idx + max_lag_search + 1]
+            best_offset = int(np.argmax(physio_slice))
+            lag_at_max = float(best_offset - max_lag_search)
+            max_xcorr = float(physio_slice[best_offset])
         else:
             max_xcorr = 0.5
             lag_at_max = 0.0

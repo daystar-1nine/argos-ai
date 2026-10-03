@@ -12,4 +12,9 @@ backend/static/evidence/
 backend/storage/
 *.db
 .pytest_cache/
+data/golden/*.mp4
+data/golden/**/*.mp4
+backend/results/
+results/evidence/
+*.log
 

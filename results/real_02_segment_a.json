@@ -1,0 +1,60 @@
+{
+  "video": "real_02_segment_a.mp4",
+  "video_path": "S:\\Hackathon\\Argos AI\\data\\golden\\real\\real_02_segment_a.mp4",
+  "video_id": "real_02_segment_a",
+  "ground_truth": "real",
+  "prediction": "real",
+  "verdict": "REAL",
+  "confidence": 0.7524,
+  "confidence_pct": 75.2,
+  "real_probability": 0.7524,
+  "fake_probability": 0.2476,
+  "sync_score": 0.758,
+  "visual_score": 75.6,
+  "audio_score": 82.1,
+  "temporal_mismatch_ms": "-200ms",
+  "suspicious_windows": [],
+  "evidence_frames": [
+    {
+      "frame_number": 10,
+      "timestamp": "00:00.40",
+      "timestamp_sec": 0.4,
+      "sync_score": 0.88,
+      "severity": "NORMAL",
+      "file_name": "frame_0010.jpg",
+      "file_path": "S:\\Hackathon\\Argos AI\\results\\evidence\\real_02_segment_a\\frame_0010.jpg",
+      "url": "/api/test-lab/evidence/real_02_segment_a/frame_0010.jpg"
+    }
+  ],
+  "timeline_csv": "S:\\Hackathon\\Argos AI\\results\\real_02_segment_a_timeline.csv",
+  "metadata": {
+    "duration_sec": 10.0,
+    "fps": 30.0,
+    "resolution": "1920x1080",
+    "total_frames": 300,
+    "audio": "AVAILABLE",
+    "face": "DETECTED"
+  },
+  "processing": {
+    "device": "CPU (Multi-Threaded)",
+    "duration_seconds": 5.95,
+    "timings": {
+      "preprocessing": 1.335,
+      "vision": 2.931,
+      "audio": 0.086,
+      "av_sync": 1.561,
+      "classifier": 0.001,
+      "evidence": 0.009,
+      "total": 5.95
+    }
+  },
+  "model": {
+    "model_name": "ARGOS-Multimodal-LipSync-Detector",
+    "model_version": "1.2.0",
+    "weights_version": "syncnet-infonce-v1.2_classifier-mlp-v1.2",
+    "pipeline_version": "1.2.0",
+    "device": "CPU (Multi-Threaded)"
+  },
+  "status": "completed",
+  "debug": null
+}

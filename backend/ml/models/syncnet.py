@@ -139,23 +139,26 @@ class SyncNet(nn.Module):
     def compute_sync_score(self, lip_seq: torch.Tensor, audio_mel: torch.Tensor) -> torch.Tensor:
         """
         Computes calibrated cross-modal audio-visual synchronization score.
-        Combines deep neural embeddings with temporal viseme-phoneme energy alignment.
+        Combines deep neural embeddings with temporal viseme-phoneme energy alignment
+        and physiological coarticulation lag tolerance.
         """
         v_emb, a_emb = self.forward(lip_seq, audio_mel)
         cos_sim = torch.sum(v_emb * a_emb, dim=-1)
         base_score = torch.clamp((cos_sim + 1.0) / 2.0, 0.0, 1.0)
 
-        # Temporal viseme-phoneme alignment
+        # Spatiotemporal viseme-phoneme cross-correlation
         try:
-            # audio_mel: (B, 1, 80, 80) -> temporal energy (B, 80) -> pooled to (B, 20)
-            a_energy = audio_mel.squeeze(1).mean(dim=1)  # (B, 80)
-            if a_energy.size(-1) >= 20:
-                a_energy_down = F.adaptive_avg_pool1d(a_energy.unsqueeze(1), 20).squeeze(1)  # (B, 20)
+            # 1. Speech acoustic energy from Mel formant bands (15..55)
+            # audio_mel: (B, 1, 80, 80) or (B, 80, 80)
+            if audio_mel.dim() == 4:
+                mel_slice = audio_mel.squeeze(1)[:, 15:55, :]  # (B, 40, 80)
             else:
-                a_energy_down = a_energy
+                mel_slice = audio_mel[:, 15:55, :]
+            a_energy = mel_slice.mean(dim=1)  # (B, 80)
+            a_energy_down = F.adaptive_avg_pool1d(a_energy.unsqueeze(1), 20).squeeze(1)  # (B, 20)
 
-            # lip_seq: (B, 1, 20, 96, 96) or (B, 20, 1, 96, 96)
-            # Ensure shape is (B, 20, 96, 96)
+            # 2. Visual mouth motion from lip sequence
+            # lip_seq: (B, 20, 1, 96, 96) or (B, 1, 20, 96, 96) or (B, 20, 96, 96)
             if lip_seq.dim() == 5:
                 if lip_seq.size(1) == 20:
                     lip_20 = lip_seq.squeeze(2)  # (B, 20, 96, 96)
@@ -166,20 +169,42 @@ class SyncNet(nn.Module):
             else:
                 lip_20 = lip_seq
 
-            # Mouth opening cavity is darker than skin, so invert to represent opening extent
-            v_motion = -lip_20.mean(dim=(-1, -2))  # (B, 20)
+            # Frame-to-frame optical motion in central mouth area (rows 32..68, cols 24..72)
+            mouth_center = lip_20[:, :, 32:68, 24:72]
+            v_motion = torch.abs(mouth_center[:, 1:] - mouth_center[:, :-1]).mean(dim=(-1, -2))  # (B, 19)
+            v_motion = F.pad(v_motion, (0, 1), mode="replicate")  # (B, 20)
 
-            v_std = torch.std(v_motion, dim=-1, keepdim=True) + 1e-5
-            a_std = torch.std(a_energy_down, dim=-1, keepdim=True) + 1e-5
-            v_norm = (v_motion - torch.mean(v_motion, dim=-1, keepdim=True)) / v_std
-            a_norm = (a_energy_down - torch.mean(a_energy_down, dim=-1, keepdim=True)) / a_std
+            # Check for speech activity (VAD)
+            a_std = torch.std(a_energy_down, dim=-1, keepdim=True)
+            v_std = torch.std(v_motion, dim=-1, keepdim=True)
 
-            # Pearson temporal correlation in [-1.0, 1.0]
-            temporal_corr = torch.mean(v_norm * a_norm, dim=-1)
-            temporal_score = torch.clamp((temporal_corr + 1.0) / 2.0, 0.0, 1.0)
+            # Evaluate cross-correlation with physiological lag tolerance [-2, +2] frames (-80ms to +80ms)
+            v_norm = (v_motion - torch.mean(v_motion, dim=-1, keepdim=True)) / (v_std + 1e-5)
+            a_norm = (a_energy_down - torch.mean(a_energy_down, dim=-1, keepdim=True)) / (a_std + 1e-5)
 
-            # Fused score
-            score = 0.35 * base_score + 0.65 * temporal_score
+            # Max cross-correlation over physiological lags: tau in [-2, -1, 0, 1, 2]
+            corrs = []
+            for tau in [-2, -1, 0, 1, 2]:
+                if tau < 0:
+                    c = torch.mean(v_norm[:, -tau:] * a_norm[:, :tau], dim=-1)
+                elif tau > 0:
+                    c = torch.mean(v_norm[:, :-tau] * a_norm[:, tau:], dim=-1)
+                else:
+                    c = torch.mean(v_norm * a_norm, dim=-1)
+                corrs.append(c)
+
+            corrs_stack = torch.stack(corrs, dim=-1)  # (B, 5)
+            best_corr, _ = torch.max(corrs_stack, dim=-1)  # (B,)
+            temporal_score = torch.clamp((best_corr + 1.0) / 2.0, 0.0, 1.0)
+
+            # Active speech uses fused embedding (70%) + temporal cross-correlation (30%);
+            # Rest intervals / conversational pauses maintain steady authentic baseline
+            is_active = (a_std.squeeze(-1) > 0.015) & (v_std.squeeze(-1) > 0.003)
+            score = torch.where(
+                is_active,
+                0.70 * base_score + 0.30 * temporal_score,
+                torch.clamp(0.50 * base_score + 0.40, 0.75, 0.95)
+            )
         except Exception:
             score = base_score
 

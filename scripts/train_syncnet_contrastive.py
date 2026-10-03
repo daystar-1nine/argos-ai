@@ -75,15 +75,16 @@ def generate_contrastive_batch(batch_size: int = 16):
     )
 
 
-def train_syncnet(epochs: int = 8, batches_per_epoch: int = 4):
+def train_syncnet(epochs: int = 15, batches_per_epoch: int = 6, batch_size: int = 16):
+    import torch.nn.functional as F
     print("=" * 60)
-    print("ARGOS AI - FAST CONTRASTIVE SYNCNET CALIBRATION")
+    print("ARGOS AI - CONTRASTIVE SYNCNET INFONCE CALIBRATION")
     print("=" * 60)
     print(f"Device: {DEVICE}")
 
     model = SyncNet(EMBEDDING_DIM).to(DEVICE)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-    criterion = nn.CosineEmbeddingLoss(margin=0.25)
+    temperature = 0.07
 
     for ep in range(1, epochs + 1):
         model.train()
@@ -92,25 +93,32 @@ def train_syncnet(epochs: int = 8, batches_per_epoch: int = 4):
         neg_sims = []
 
         for _ in range(batches_per_epoch):
-            v, a, target = generate_contrastive_batch(batch_size=12)
-            v, a, target = v.to(DEVICE), a.to(DEVICE), target.to(DEVICE)
+            # Generate batch of positive pairs
+            v, a = generate_contrastive_batch(batch_size=batch_size * 2)[:2]
+            v = v[:batch_size].to(DEVICE)
+            a = a[:batch_size].to(DEVICE)
 
             optimizer.zero_grad()
             v_emb = model.visual_encoder(v)
             a_emb = model.audio_encoder(a)
-            loss = criterion(v_emb, a_emb, target)
+
+            # Symmetrical InfoNCE loss across batch
+            logits = torch.matmul(v_emb, a_emb.T) / temperature
+            labels = torch.arange(batch_size, device=DEVICE)
+            loss = (F.cross_entropy(logits, labels) + F.cross_entropy(logits.T, labels)) / 2.0
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
+            with torch.no_grad():
+                sim_matrix = torch.matmul(v_emb, a_emb.T).cpu().numpy()
+                pos_sims.extend(sim_matrix.diagonal())
+                mask = ~np.eye(batch_size, dtype=bool)
+                neg_sims.extend(sim_matrix[mask])
 
-            cos_sim = torch.sum(v_emb * a_emb, dim=-1).detach().cpu().numpy()
-            pos_sims.extend(cos_sim[target.cpu().numpy() == 1.0])
-            neg_sims.extend(cos_sim[target.cpu().numpy() == -1.0])
-
-        pos_score = (np.mean(pos_sims) + 1.0) / 2.0
-        neg_score = (np.mean(neg_sims) + 1.0) / 2.0
-        print(f"Epoch [{ep:02d}/{epochs}] Loss: {total_loss/batches_per_epoch:.4f} | Sync: {pos_score:.3f} | Desync: {neg_score:.3f}")
+        pos_score = float(np.mean(pos_sims))
+        neg_score = float(np.mean(neg_sims))
+        print(f"Epoch [{ep:02d}/{epochs}] Loss: {total_loss/batches_per_epoch:.4f} | Pos Sim: {pos_score:.3f} | Neg Sim: {neg_score:.3f}")
 
     SYNCNET_WEIGHTS_PATH.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), SYNCNET_WEIGHTS_PATH)

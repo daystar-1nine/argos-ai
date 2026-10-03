@@ -1,7 +1,9 @@
 video,ground_truth,prediction,confidence,real_probability,fake_probability,sync_score,processing_time
-real_01.mp4,real,REAL,0.5982,0.5982,0.4018,0.913,1.42
-real_02.mp4,real,REAL,0.6863,0.6863,0.3137,0.925,0.45
-real_03.mp4,real,REAL,0.6961,0.6961,0.3039,0.927,0.51
-fake_01.mp4,fake,POTENTIALLY_MANIPULATED,0.5597,0.4403,0.5597,0.69,0.4
-fake_02.mp4,fake,POTENTIALLY_MANIPULATED,0.6157,0.3843,0.6157,0.637,0.44
-fake_03.mp4,fake,POTENTIALLY_MANIPULATED,0.5915,0.4085,0.5915,0.707,0.51
+real_01_full.mp4,real,REAL,0.8716,0.8716,0.1284,0.791,10.81
+real_02_segment_a.mp4,real,REAL,0.7524,0.7524,0.2476,0.758,5.95
+real_03_segment_b.mp4,real,POTENTIALLY MANIPULATED,0.788,0.212,0.788,0.61,3.9
+real_04_segment_c.mp4,real,INVALID_MEDIA,0.0,0.0,0.0,0.0,0.0
+fake_01_delay_400ms.mp4,fake,POTENTIALLY MANIPULATED,0.6974,0.3026,0.6974,0.719,5.9
+fake_02_delay_600ms.mp4,fake,POTENTIALLY MANIPULATED,0.808,0.192,0.808,0.583,3.89
+fake_03_advance_400ms.mp4,fake,POTENTIALLY MANIPULATED,0.7013,0.2987,0.7013,0.693,5.95
+fake_04_mismatched_audio.mp4,fake,AV_SYNC_ANALYSIS_UNAVAILABLE,0.0,0.0,0.0,0.0,0.0

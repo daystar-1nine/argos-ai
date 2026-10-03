@@ -74,3 +74,38 @@ def get_models_status():
         "device": str(DEVICE),
         "torch_version": torch.__version__,
     }
+
+
+@router.get("/ml")
+def get_ml_health_status():
+    """
+    GET /api/health/ml
+    Returns real-time operational status of neural models, pipeline version, and hardware execution device.
+    """
+    from ml.models.syncnet import load_syncnet_model
+    from ml.models.classifier import load_classifier_model
+    from ml.config import (
+        MODEL_VERSION,
+        PIPELINE_VERSION,
+        CLASSIFIER_WEIGHTS_PATH,
+    )
+
+    _, syncnet_loaded = load_syncnet_model(device=DEVICE)
+    _, classifier_loaded = load_classifier_model(device=DEVICE)
+    all_ready = syncnet_loaded and classifier_loaded
+
+    return {
+        "status": "ready" if all_ready else "degraded",
+        "model_loaded": all_ready,
+        "model_version": MODEL_VERSION,
+        "device": str(DEVICE),
+        "device_name": DEVICE_NAME,
+        "checkpoint": str(CLASSIFIER_WEIGHTS_PATH),
+        "audio_pipeline": True,
+        "visual_pipeline": True,
+        "sync_pipeline": syncnet_loaded,
+        "syncnet_loaded": syncnet_loaded,
+        "classifier_loaded": classifier_loaded,
+        "pipeline_version": PIPELINE_VERSION,
+    }
+

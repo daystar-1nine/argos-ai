@@ -5,14 +5,14 @@
   "ground_truth": "unspecified",
   "prediction": "real",
   "verdict": "REAL",
-  "confidence": 0.5982,
-  "confidence_pct": 59.8,
-  "real_probability": 0.5982,
-  "fake_probability": 0.4018,
-  "sync_score": 0.913,
+  "confidence": 0.7114,
+  "confidence_pct": 71.1,
+  "real_probability": 0.7114,
+  "fake_probability": 0.2886,
+  "sync_score": 0.829,
   "visual_score": 95.0,
-  "audio_score": 100.0,
-  "temporal_mismatch_ms": "-280ms",
+  "audio_score": 96.4,
+  "temporal_mismatch_ms": "-40ms",
   "suspicious_windows": [],
   "evidence_frames": [
     {
@@ -37,42 +37,24 @@
   },
   "processing": {
     "device": "CPU (Multi-Threaded)",
-    "duration_seconds": 0.39,
+    "duration_seconds": 10.26,
     "timings": {
-      "preprocessing": 0.077,
-      "vision": 0.115,
-      "audio": 0.004,
-      "av_sync": 0.18,
-      "classifier": 0.001,
-      "evidence": 0.001,
-      "total": 0.39
+      "preprocessing": 0.149,
+      "vision": 0.311,
+      "audio": 9.439,
+      "av_sync": 0.211,
+      "classifier": 0.004,
+      "evidence": 0.009,
+      "total": 10.26
     }
   },
   "model": {
-    "model_name": "ARGOS-AV-Detector",
-    "model_version": "1.0.0",
-    "weights_version": "syncnet-v1.0-classifier-v1.0",
-    "pipeline_version": "1.0.0",
+    "model_name": "ARGOS-Multimodal-LipSync-Detector",
+    "model_version": "1.2.0",
+    "weights_version": "syncnet-infonce-v1.2_classifier-mlp-v1.2",
+    "pipeline_version": "1.2.0",
     "device": "CPU (Multi-Threaded)"
   },
   "status": "completed",
-  "debug": {
-    "face_crops": [
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\faces\\face_frame_0000.jpg",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\faces\\face_frame_0018.jpg",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\faces\\face_frame_0036.jpg",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\faces\\face_frame_0054.jpg"
-    ],
-    "lip_crops": [
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0000.png",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0010.png",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0021.png",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0032.png",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0043.png",
-      "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\lips\\lip_crop_0054.png"
-    ],
-    "sync_plot": "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\temporal_sync_plot.png",
-    "mel_plot": "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\mel_spectrogram.png",
-    "debug_json": "S:\\Hackathon\\Argos AI\\results\\debug\\real_01\\analysis_debug.json"
-  }
+  "debug": null
 }
