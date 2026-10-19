@@ -130,7 +130,8 @@ export default function TestLabPage() {
       try {
         const res = await fetch(`/api/test-lab/${testId}`);
         if (!res.ok) return;
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
+        if (!data) return;
 
         setProgressStage(data.stage_number || 1);
         setStageDescription(data.current_stage || 'Processing');
@@ -140,17 +141,24 @@ export default function TestLabPage() {
           clearInterval(interval);
           // Fetch final forensic result
           const resResult = await fetch(`/api/test-lab/${testId}/result`);
-          const resData = await resResult.json();
-          setAnalysisResult(resData);
-          setIsAnalyzing(false);
+          if (resResult.ok) {
+            const resData = await resResult.json().catch(() => null);
+            if (resData) {
+              setAnalysisResult(resData);
+              setIsAnalyzing(false);
 
-          // Update face metadata based on ML findings
-          if (videoMeta) {
-            setVideoMeta(prev => prev ? {
-              ...prev,
-              face: resData.metadata?.face === 'DETECTED' ? '✓ DETECTED' : '✗ NOT DETECTED'
-            } : null);
+              // Update face metadata based on ML findings
+              if (videoMeta) {
+                setVideoMeta(prev => prev ? {
+                  ...prev,
+                  face: resData.metadata?.face === 'DETECTED' ? '✓ DETECTED' : '✗ NOT DETECTED'
+                } : null);
+              }
+              return;
+            }
           }
+          setIsAnalyzing(false);
+          setErrorMessage('Forensic result data could not be parsed.');
         } else if (data.status === 'failed' || data.status === 'unavailable' || data.status === 'invalid') {
           clearInterval(interval);
           setIsAnalyzing(false);
@@ -251,8 +259,23 @@ export default function TestLabPage() {
       }
 
       if (!res) throw new Error('No video selected.');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.detail || 'Analysis request failed.');
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Server returned error (${res.status}: ${res.statusText})`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.message || data?.detail || data?.error?.message || `Analysis request failed with status ${res.status}`);
+      }
+
+      if (!data?.test_id) {
+        throw new Error('Analysis dispatch did not return a valid test ID.');
+      }
+
       setTestId(data.test_id);
     } catch (err: any) {
       setIsAnalyzing(false);
@@ -267,18 +290,20 @@ export default function TestLabPage() {
 
     try {
       const r1 = await fetch(`/api/test-lab/analyze-sample?category=real&filename=${realTestId}&debug=false`, { method: 'POST' });
-      const d1 = await r1.json();
+      const d1 = await r1.json().catch(() => ({}));
+      if (!r1.ok || !d1.test_id) throw new Error(d1.message || 'Failed to initialize real sample evaluation.');
 
       const r2 = await fetch(`/api/test-lab/analyze-sample?category=fake&filename=${fakeTestId}&debug=false`, { method: 'POST' });
-      const d2 = await r2.json();
+      const d2 = await r2.json().catch(() => ({}));
+      if (!r2.ok || !d2.test_id) throw new Error(d2.message || 'Failed to initialize fake sample evaluation.');
 
       const pollUntilDone = async (id: string) => {
         for (let i = 0; i < 40; i++) {
           await new Promise(r => setTimeout(r, 400));
           const chk = await fetch(`/api/test-lab/${id}`);
           if (chk.ok) {
-            const dj = await chk.json();
-            if (dj.has_result || dj.status === 'completed') return;
+            const dj = await chk.json().catch(() => null);
+            if (dj && (dj.has_result || dj.status === 'completed')) return;
           }
         }
       };
@@ -294,10 +319,15 @@ export default function TestLabPage() {
         body: cForm,
       });
 
-      const cmpData = await cmpRes.json();
-      setComparisonResult(cmpData);
-    } catch (err) {
+      const cmpData = await cmpRes.json().catch(() => null);
+      if (cmpRes.ok && cmpData) {
+        setComparisonResult(cmpData);
+      } else {
+        throw new Error('Failed to generate comparative forensic metrics.');
+      }
+    } catch (err: any) {
       console.error('Comparison error:', err);
+      setErrorMessage(err.message || 'Comparison analysis failed.');
     } finally {
       setIsComparing(false);
     }
