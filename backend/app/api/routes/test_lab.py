@@ -116,14 +116,28 @@ async def upload_and_analyze_video(
             detail=f"Unsupported format '{suffix}'. Supported: {', '.join(sorted(SUPPORTED_VIDEO_EXTENSIONS))}",
         )
 
+    gt_value = (ground_truth or "unknown").strip().lower()
+
+    # Deduplication check: if a test is already actively processing for this file, return existing job
+    for existing_id, existing_job in _test_jobs.items():
+        if (
+            existing_job.get("status") == "processing"
+            and existing_job.get("filename") == file.filename
+        ):
+            return {
+                "test_id": existing_id,
+                "status": "processing",
+                "filename": file.filename,
+                "ground_truth": existing_job.get("ground_truth", gt_value),
+                "message": "Video evaluation already in progress.",
+            }
+
     test_id = f"tst_{uuid.uuid4().hex[:10]}"
     saved_video_path = VIDEOS_DIR / f"{test_id}_{file.filename}"
 
     with open(saved_video_path, "wb") as f_out:
         content = await file.read()
         f_out.write(content)
-
-    gt_value = (ground_truth or "unknown").strip().lower()
 
     _test_jobs[test_id] = {
         "test_id": test_id,
@@ -172,6 +186,21 @@ def analyze_existing_sample(
         raise EntityNotFoundException("TestSample", f"{category}/{filename}")
 
     gt_value = (ground_truth or category).strip().lower()
+
+    # Deduplication check: if a sample is already actively processing, return existing job
+    for existing_id, existing_job in _test_jobs.items():
+        if (
+            existing_job.get("status") == "processing"
+            and existing_job.get("filename") == filename
+        ):
+            return {
+                "test_id": existing_id,
+                "status": "processing",
+                "filename": filename,
+                "ground_truth": existing_job.get("ground_truth", gt_value),
+                "message": f"Sample '{filename}' is already being evaluated.",
+            }
+
     test_id = f"tst_{uuid.uuid4().hex[:10]}"
     _test_jobs[test_id] = {
         "test_id": test_id,

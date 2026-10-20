@@ -67,6 +67,15 @@ interface VideoMetadataState {
   face: string;
 }
 
+function formatTimestamp(val: any): string {
+  if (val === null || val === undefined) return '0.00';
+  if (typeof val === 'number') return val.toFixed(2);
+  const str = String(val);
+  if (str.includes(':')) return str;
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? str : parsed.toFixed(2);
+}
+
 export default function TestLabPage() {
   const { user, plan } = useAuth();
   const [activeTab, setActiveTab] = useState<'single' | 'compare' | 'batch'>('single');
@@ -126,12 +135,14 @@ export default function TestLabPage() {
   useEffect(() => {
     if (!isAnalyzing || !testId) return;
 
+    let isMounted = true;
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/test-lab/${testId}`);
-        if (!res.ok) return;
+        if (!res.ok || !isMounted) return;
         const data = await res.json().catch(() => null);
-        if (!data) return;
+        if (!data || !isMounted) return;
 
         setProgressStage(data.stage_number || 1);
         setStageDescription(data.current_stage || 'Processing');
@@ -141,36 +152,41 @@ export default function TestLabPage() {
           clearInterval(interval);
           // Fetch final forensic result
           const resResult = await fetch(`/api/test-lab/${testId}/result`);
-          if (resResult.ok) {
+          if (resResult.ok && isMounted) {
             const resData = await resResult.json().catch(() => null);
             if (resData) {
               setAnalysisResult(resData);
               setIsAnalyzing(false);
 
-              // Update face metadata based on ML findings
-              if (videoMeta) {
-                setVideoMeta(prev => prev ? {
-                  ...prev,
-                  face: resData.metadata?.face === 'DETECTED' ? '✓ DETECTED' : '✗ NOT DETECTED'
-                } : null);
-              }
+              // Update face metadata safely
+              setVideoMeta(prev => prev ? {
+                ...prev,
+                face: resData.metadata?.face === 'DETECTED' ? '✓ DETECTED' : '✗ NOT DETECTED'
+              } : null);
               return;
             }
           }
-          setIsAnalyzing(false);
-          setErrorMessage('Forensic result data could not be parsed.');
+          if (isMounted) {
+            setIsAnalyzing(false);
+            setErrorMessage('Forensic result data could not be parsed.');
+          }
         } else if (data.status === 'failed' || data.status === 'unavailable' || data.status === 'invalid') {
           clearInterval(interval);
-          setIsAnalyzing(false);
-          setErrorMessage(data.error_message || data.current_stage || 'Analysis stopped with an edge condition.');
+          if (isMounted) {
+            setIsAnalyzing(false);
+            setErrorMessage(data.error_message || data.current_stage || 'Analysis stopped with an edge condition.');
+          }
         }
       } catch (err: any) {
         console.error('Test Lab polling error:', err);
       }
-    }, 350);
+    }, 1000);
 
-    return () => clearInterval(interval);
-  }, [isAnalyzing, testId, videoMeta]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isAnalyzing, testId]);
 
   // Handle custom file selection
   const handleFileChange = (file: File) => {
@@ -231,6 +247,7 @@ export default function TestLabPage() {
   // Run Real ML Analysis
   const runRealAnalysis = async () => {
     if (!selectedFile && !selectedSample) return;
+    if (isAnalyzing) return;
 
     setIsAnalyzing(true);
     setAnalysisResult(null);
@@ -285,6 +302,7 @@ export default function TestLabPage() {
 
   // Run Side-by-Side Comparison
   const runComparison = async () => {
+    if (isComparing) return;
     setIsComparing(true);
     setComparisonResult(null);
 
@@ -940,7 +958,8 @@ export default function TestLabPage() {
                     {analysisResult.evidence_frames && analysisResult.evidence_frames.length > 0 ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         {analysisResult.evidence_frames.map((frame: any, idx: number) => {
-                          const frameUrl = `/api/test-lab/${testId}/evidence/${frame.filename}`;
+                          const fname = frame.filename || frame.file_name || '';
+                          const frameUrl = `/api/test-lab/${testId}/evidence/${fname}`;
                           return (
                             <div
                               key={idx}
@@ -954,7 +973,7 @@ export default function TestLabPage() {
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   onError={(e) => {
                                     // Fallback to static direct file if test-id route not matched
-                                    (e.target as HTMLImageElement).src = `/results/evidence/${analysisResult.video_id}/${frame.filename}`;
+                                    (e.target as HTMLImageElement).src = `/results/evidence/${analysisResult.video_id}/${fname}`;
                                   }}
                                 />
                                 <div className="absolute top-1 left-1 px-1.5 py-0.2 bg-black/80 text-[#F4CD3F] text-[9px] font-mono font-bold">
@@ -966,9 +985,9 @@ export default function TestLabPage() {
                               </div>
 
                               <div className="flex items-center justify-between text-[10px]">
-                                <span className="font-black text-[#111111]">T: {frame.timestamp?.toFixed(2)}s</span>
-                                <span className={`font-bold ${frame.is_anomaly ? 'text-red-700' : 'text-green-700'}`}>
-                                  {frame.is_anomaly ? 'ANOMALY' : 'SYNC OK'}
+                                <span className="font-black text-[#111111]">T: {formatTimestamp(frame.timestamp_sec ?? frame.timestamp)}s</span>
+                                <span className={`font-bold ${frame.is_anomaly || frame.severity === 'HIGH' ? 'text-red-700' : 'text-green-700'}`}>
+                                  {frame.is_anomaly || frame.severity === 'HIGH' ? 'ANOMALY' : 'SYNC OK'}
                                 </span>
                               </div>
                             </div>
@@ -1056,7 +1075,7 @@ export default function TestLabPage() {
                           <span>0.00s</span>
                           <span className="text-[#D95D5D]">── 0.75 ANOMALY THRESHOLD</span>
                           <span className="text-[#F4CD3F]">● SYNC SCORE TRAJECTORY</span>
-                          <span>{analysisResult.timeline[analysisResult.timeline.length - 1]?.timestamp?.toFixed(2) || '2.00'}s</span>
+                          <span>{formatTimestamp(analysisResult.timeline[analysisResult.timeline.length - 1]?.timestamp_sec ?? analysisResult.timeline[analysisResult.timeline.length - 1]?.timestamp) || '2.00'}s</span>
                         </div>
                       </div>
                     </div>
